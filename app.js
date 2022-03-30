@@ -20,6 +20,10 @@ ShareDB.types.register(require('rich-text').type);
 const share = new ShareDB();
 const connection = share.connect();
 
+app.post('/op/:id', (req, res) => {
+    
+})
+
 app.get('/connect/:id', (req, res) => {
     // DOES NOT QUITE WORK YET
     // const doc = connection.get('documents', 'firstDocument');
