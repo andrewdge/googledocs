@@ -3,78 +3,107 @@ const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 const ShareDB = require('sharedb');
 const express = require('express')
 const http = require('http')
+const bodyParser = require('body-parser')
+const session = require('express-session')
+const { v4: uuidv4 } = require('uuid');
+const cors = require('cors');
+const JSON5 = require('json5')
 
-
+const PORT = 8080;
 const app = express()
 const server = http.createServer(app)
-const webSocketServer = new WebSocket.Server({ server: server })
+// const wss = new WebSocket.Server({ server: server })
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 
-/**
- * By Default Sharedb uses JSON0 OT type.
- * To Make it compatible with our quill editor.
- * We are using this npm package called rich-text
- * which is based on quill delta
- */
+app.use(cors({
+    credentials: true,
+    origin: 'http://localhost:3000'
+}));
+
+app.use(session({
+    genid: function(req) {
+        return uuidv4() // use UUIDs for session IDs
+    },
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+}))
+
 ShareDB.types.register(require('rich-text').type);
 
 const share = new ShareDB();
-const connection = share.connect();
+const connect = share.connect();
+
+const doc = connect.get('documents', 'firstDocument');
+
 
 app.post('/op/:id', (req, res) => {
+
+})
+
+app.get('/connect/:id', async (req, res) => {
+    console.log(req.params.id)
+    res.writeHead(200, {
+        'Location': 'http://localhost:3000',
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    })
+    res.flushHeaders();
+    // console.log(doc)
+    // console.log(doc.data.ops)
+    // let json = JSON5.stringify(doc.data.ops)
+    // console.log(json)
+    let json = JSON.stringify(doc.data.ops)
+    console.log(json)
+    res.write("data: " + json + "\n\n")
+    // res.end()
+    // doc.subscribe((e) => {
+    //     if (e) throw e;
+    //     if (doc.type !== null) {
+    //         res.write({ data: { content: }})
+    //     }
+    // })
     
-})
-
-app.get('/connect/:id', (req, res) => {
-    // DOES NOT QUITE WORK YET
-    // const doc = connection.get('documents', 'firstDocument');
-
-    // doc.fetch(function (err) {
-    // if (err) throw err;
-    // if (doc.type === null) {
-    //     doc.create([{ insert: 'Hello World!' }], 'rich-text', () => {
-    //     //   const wss = new WebSocket.Server({ port: 8080 });
-
-    //     //   wss.on('connection', function connection(ws) {
-    //     //     // For transport we are using a ws JSON stream for communication
-    //     //     // that can read and write js objects.
-    //     //     const jsonStream = new WebSocketJSONStream(ws);
-    //     //     share.listen(jsonStream);
-    //     //   });
-
-    //         webSocketServer.on('connection', (websocket) => {
-    //             let stream = new WebSocketJSONStream(websocket)
-    //             share.listen(stream) 
-    //         })
-    //     });
-    //     return;
-    // }
-    // });
-})
-
-const doc = connection.get('documents', 'firstDocument');
-doc.fetch(function (err) {
-    if (err) throw err;
-    if (doc.type === null) {
-        doc.create([{ insert: 'Hello World!' }], 'rich-text', () => {
-        //   const wss = new WebSocket.Server({ port: 8080 });
-
-        //   wss.on('connection', function connection(ws) {
-        //     // For transport we are using a ws JSON stream for communication
-        //     // that can read and write js objects.
-        //     const jsonStream = new WebSocketJSONStream(ws);
-        //     share.listen(jsonStream);
-        //   });
-
-            webSocketServer.on('connection', (websocket) => {
-                let stream = new WebSocketJSONStream(websocket)
-                share.listen(stream) 
-            })
-        });
-        return;
-    }
 });
 
+// const doc = connect.get('documents', 'firstDocument');
+// doc.fetch(function (err) {
+//     if (err) throw err;
+//     if (doc.type === null) {
+//         doc.create([{ insert: 'Hello World!' }], 'rich-text', () => {
+//         //   const wss = new WebSocket.Server({ port: 8080 });
+
+//         //   wss.on('connection', function connection(ws) {
+//         //     // For transport we are using a ws JSON stream for communication
+//         //     // that can read and write js objects.
+//         //     const jsonStream = new WebSocketJSONStream(ws);
+//         //     share.listen(jsonStream);
+//         //   });
+
+//             wss.on('connection', (websocket) => {
+//                 let stream = new WebSocketJSONStream(websocket)
+//                 share.listen(stream) 
+//             })
+//         });
+//         return;
+//     }
+// });
 
 
-server.listen(8080)
+
+app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`)
+    doc.fetch(function (err) {
+        if (err) throw err;
+        if (doc.type === null) {
+            doc.create([{ insert: 'Hello World!' }], 'rich-text', () => {});
+            console.log('doc created')
+            // console.log(doc.data)
+            return;
+        }
+    })
+})
 
