@@ -24,7 +24,7 @@ let id = uuidv4();
 function App() {
 
   useEffect(() => {
-    const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true });
+    const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true }); // set up event source receiver
     // doc.fetch((err) => {
     //   if (err) throw err;
     //   if (doc.type !== null) {
@@ -40,19 +40,14 @@ function App() {
             toolbar: toolbarOptions,
           },
         };
-    let quill = new Quill('#editor', options);
+    let quill = new Quill('#editor', options); // setup quill
 
     console.log(sse)
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
       let data = JSON.parse(e.data)
       console.log(data);
-      
-      // var ops = [
-      //   { insert: 'Hello World!' },
-      // ];
-      // console.log(ops)
-      quill.setContents(data.content);
+      quill.setContents(data.content); // set initial doc state
     }
     sse.onerror = (e) => {
       // error log here 
@@ -70,7 +65,7 @@ function App() {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(delta.ops)
-      })
+      }) // post updates
     });
     // doc.on('op', function (op, source) {
     //   if (source === quill) return;
@@ -101,45 +96,6 @@ function App() {
     
 }, []);
 
-  // useEffect(() => {
-  //   doc.subscribe(function (err) {
-  //     if (err) throw err;
-
-  //     const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
-  //     const options = {
-  //       theme: 'snow',
-  //       modules: {
-  //         toolbar: toolbarOptions,
-  //       },
-  //     };
-  //     let quill = new Quill('#editor', options);
-  //     /**
-  //      * On Initialising if data is present in server
-  //      * Updaing its content to editor
-  //      */
-  //     quill.setContents(doc.data);
-
-  //     /**
-  //      * On Text change publishing to our server
-  //      * so that it can be broadcasted to all other clients
-  //      */
-  //     quill.on('text-change', function (delta, oldDelta, source) {
-  //       if (source !== 'user') return;
-  //       doc.submitOp(delta, { source: quill });
-  //     });
-
-  //     /** listening to changes in the document
-  //      * that is coming from our server
-  //      */
-  //     doc.on('op', function (op, source) {
-  //       if (source === quill) return;
-  //       quill.updateContents(op);
-  //     });
-  //   });
-  //   return () => {
-  //     connection.close();
-  //   };
-  // }, []);
 
   return (
     <div style={{ margin: '5%', border: '1px solid' }}>

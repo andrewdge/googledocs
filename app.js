@@ -1,17 +1,17 @@
-const WebSocket = require('ws');
-const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
+// const WebSocket = require('ws');
+// const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 const ShareDB = require('sharedb');
 const express = require('express')
-const http = require('http')
+// const http = require('http')
 const bodyParser = require('body-parser')
-const session = require('express-session')
+// const session = require('express-session')
 const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
-const JSON5 = require('json5')
+// const JSON5 = require('json5')
 
 const PORT = 8080;
 const app = express()
-const server = http.createServer(app)
+// const server = http.createServer(app)
 // const wss = new WebSocket.Server({ server: server })
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
@@ -19,30 +19,30 @@ app.use(bodyParser.json())
 app.use(cors({
     credentials: true,
     origin: 'http://localhost:3000'
-}));
+})); // need this since we are on 2 ports
 
-app.use(session({
-    genid: function(req) {
-        return uuidv4() // use UUIDs for session IDs
-    },
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }
-}))
+// app.use(session({
+//     genid: function(req) {
+//         return uuidv4() // use UUIDs for session IDs
+//     },
+//     secret: 'keyboard cat',
+//     resave: false,
+//     saveUninitialized: true,
+//     cookie: { secure: false }
+// }))
 
-ShareDB.types.register(require('rich-text').type);
+ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
 
 const share = new ShareDB();
 const connect = share.connect();
 
-const doc = connect.get('documents', 'firstDocument');
+const doc = connect.get('documents', 'firstDocument'); // get the only document
 
 
 app.post('/op/:id', (req, res) => {
     // console.log(req.body)
     let ops = req.body
-    doc.submitOp(ops)
+    doc.submitOp(ops) // submit for changes
 })
 
 app.get('/connect/:id', async (req, res) => {
@@ -52,21 +52,18 @@ app.get('/connect/:id', async (req, res) => {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive'
-    })
-    res.flushHeaders();
-    // console.log(doc)
-    // console.log(doc.data.ops)
-    // let json = JSON5.stringify(doc.data.ops)
-    // console.log(json)
+    }) // set up http stream
+    res.flushHeaders(); // send headers
     let firstMessage = true;
     if (firstMessage) {
-        let oplist = doc.data.ops
+        let oplist = doc.data.ops // get ops
         let content = JSON.stringify({content: oplist})
         // console.log(content)
         console.log('first message')
         res.write("data: " + content + "\n\n")
         firstMessage = false
     } else {
+        // THIS DOES NOT WORK
         console.log('hi')
         // doc.subscribe((e) => {
         //     if (e) throw e;
