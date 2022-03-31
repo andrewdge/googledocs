@@ -33,8 +33,6 @@ function App() {
     // })
 
 
-
-
     const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
         const options = {
           theme: 'snow',
@@ -49,11 +47,12 @@ function App() {
     sse.onmessage = (e) => {
       let data = JSON.parse(e.data)
       console.log(data);
+      
       // var ops = [
       //   { insert: 'Hello World!' },
       // ];
       // console.log(ops)
-      quill.setContents(data);
+      quill.setContents(data.content);
     }
     sse.onerror = (e) => {
       // error log here 
@@ -61,27 +60,37 @@ function App() {
       console.log(e);
       // sse.close();
     }
-    doc.subscribe(function (err) {
-        if (err) throw err;
+
+    quill.setContents(doc.data);
+    quill.on('text-change', function (delta, oldDelta, source) {
+      if (source !== 'user') return;
+      // doc.submitOp(delta, { source: quill });
+      console.log(delta.ops)
+      fetch(`${serverBaseURL}/op/${id}`, {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(delta.ops)
+      })
+    });
+    // doc.on('op', function (op, source) {
+    //   if (source === quill) return;
+    //   quill.updateContents(op);
+    // });
+
+    // doc.subscribe(function (err) {
+    //     if (err) throw err;
+    //     console.log('hi')
   
-        // const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
-        // const options = {
-        //   theme: 'snow',
-        //   modules: {
-        //     toolbar: toolbarOptions,
-        //   },
-        // };
-        // let quill = new Quill('#editor', options);
-        quill.setContents(doc.data);
-        quill.on('text-change', function (delta, oldDelta, source) {
-          if (source !== 'user') return;
-          doc.submitOp(delta, { source: quill });
-        });
-        doc.on('op', function (op, source) {
-          if (source === quill) return;
-          quill.updateContents(op);
-        });
-      });
+    //     // const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
+    //     // const options = {
+    //     //   theme: 'snow',
+    //     //   modules: {
+    //     //     toolbar: toolbarOptions,
+    //     //   },
+    //     // };
+    //     // let quill = new Quill('#editor', options);
+        
+    //   });
       // return () => {
       //   sse.close();
       // };

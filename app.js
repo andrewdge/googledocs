@@ -40,7 +40,9 @@ const doc = connect.get('documents', 'firstDocument');
 
 
 app.post('/op/:id', (req, res) => {
-
+    // console.log(req.body)
+    let ops = req.body
+    doc.submitOp(ops)
 })
 
 app.get('/connect/:id', async (req, res) => {
@@ -56,9 +58,23 @@ app.get('/connect/:id', async (req, res) => {
     // console.log(doc.data.ops)
     // let json = JSON5.stringify(doc.data.ops)
     // console.log(json)
-    let json = JSON.stringify(doc.data.ops)
-    console.log(json)
-    res.write("data: " + json + "\n\n")
+    let firstMessage = true;
+    if (firstMessage) {
+        let oplist = doc.data.ops
+        let content = JSON.stringify({content: oplist})
+        // console.log(content)
+        console.log('first message')
+        res.write("data: " + content + "\n\n")
+        firstMessage = false
+    } else {
+        console.log('hi')
+        // doc.subscribe((e) => {
+        //     if (e) throw e;
+        //     console.log(doc.data.ops)
+        //     res.write("data: " + JSON.stringify(doc.data.ops) + "\n\n")
+        // })
+    }
+    
     // res.end()
     // doc.subscribe((e) => {
     //     if (e) throw e;
