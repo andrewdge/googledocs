@@ -38,6 +38,9 @@ const connect = share.connect();
 
 const doc = connect.get('documents', 'firstDocument'); // get the only document
 
+app.get('/', (req, res) => {
+    res.redirect('http://localhost:3000')
+})
 
 app.post('/op/:id', (req, res) => {
     // console.log(req.body)
