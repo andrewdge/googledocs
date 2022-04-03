@@ -14,7 +14,7 @@ Sharedb.types.register(richText.type);
 // const socket = new WebSocket('ws://127.0.0.1:8080');
 // const connection = new Sharedb.Connection(socket);
 
-const serverBaseURL = process.env.NODE_ENV === 'development' ? "http://localhost:8080" : "209.151.151.49";
+const serverBaseURL = process.env.NODE_ENV === 'development' ? "http://localhost:8080" : "209.151.151.49:8080";
 const connection = new Sharedb.Connection(serverBaseURL);
 
 // Querying for our document
