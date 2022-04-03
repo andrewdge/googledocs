@@ -23,7 +23,9 @@ app.use(cors({
 
 ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
 
-const share = new ShareDB();
+// const share = new ShareDB();
+const db = require('sharedb-mongo')('mongodb://localhost:27017/test');
+const share = new ShareDB({db});
 share.presence = true;
 
 const connect = share.connect();
