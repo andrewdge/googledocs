@@ -35,10 +35,26 @@ app.get('/', (req, res) => {
 })
 
 app.post('/op/:id', async (req, res) => {
-    console.log("operation")
     let ops = req.body
-    console.log(ops)
     doc.submitOp(ops, {source: req.params.id}) // submit for changes
+    res.end()
+})
+app.get('/doc/:id', (req, res) => {
+    let html = ""
+    let oplist = doc.data.ops
+    for (var i = 0; i < oplist.length; i++) {
+      let op = oplist[i]
+      let insert = op.insert
+      insert = insert.replace("\n", "<br />")
+      if (op.attributes) {
+        if (op.attributes.bold) insert = "<strong>" + insert + "</strong>"
+        if (op.attributes.italic) insert = "<em>" + insert + "</em>"
+        if (op.attributes.underline) insert = "<u>" + insert + "</u>"
+      }
+      html += insert
+    }
+    html = "<p>" + html + "</p>"
+    res.send(html)
     res.end()
 })
 
@@ -65,8 +81,6 @@ app.get('/connect/:id', async (req, res) => {
     }) 
     doc.on('op', (op, src) => {
       if (src == req.params.id) return
-      // console.log(op)
-      // console.log(op)
       let content = JSON.stringify(op)
       res.write("data: " + content + "\n\n")
     })

@@ -68,33 +68,7 @@ function App() {
         body: JSON.stringify(delta.ops)
       }) // post updates
     });
-    // doc.on('op', function (op, source) {
-    //   if (source === quill) return;
-    //   quill.updateContents(op);
-    // });
-
-    // doc.subscribe(function (err) {
-    //     if (err) throw err;
-    //     console.log('hi')
-  
-    //     // const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
-    //     // const options = {
-    //     //   theme: 'snow',
-    //     //   modules: {
-    //     //     toolbar: toolbarOptions,
-    //     //   },
-    //     // };
-    //     // let quill = new Quill('#editor', options);
-        
-    //   });
-      // return () => {
-      //   sse.close();
-      // };
-      // return () => {
-      //   connection.close();
-      // };
-
-    
+   
 }, []);
 
 
