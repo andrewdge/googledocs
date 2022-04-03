@@ -18,7 +18,7 @@ app.use(bodyParser.json())
 
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:3000'
+    origin: ['http://localhost:3000', 'http://localhost:8080']
 })); // need this since we are on 2 ports
 
 ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
