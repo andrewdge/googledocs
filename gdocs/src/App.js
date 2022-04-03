@@ -28,6 +28,7 @@ function App() {
 
   useEffect(() => {
     const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true }); // set up event source receiver
+    console.log('uuid is: ' + id)
   
     const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
         const options = {
@@ -41,6 +42,7 @@ function App() {
     console.log(sse)
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
+      console.log(e)
       let data = JSON.parse(e.data)
       let text;
       console.log(data.content)
@@ -62,39 +64,13 @@ function App() {
       if (source !== 'user') return;
       // doc.submitOp(delta, { source: quill });
       console.log(id)
+      let payload = JSON.stringify(delta.ops)
       fetch(`${serverBaseURL}/op/${id}`, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(delta.ops)
+        body: payload
       }) // post updates
     });
-    // doc.on('op', function (op, source) {
-    //   if (source === quill) return;
-    //   quill.updateContents(op);
-    // });
-
-    // doc.subscribe(function (err) {
-    //     if (err) throw err;
-    //     console.log('hi')
-  
-    //     // const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
-    //     // const options = {
-    //     //   theme: 'snow',
-    //     //   modules: {
-    //     //     toolbar: toolbarOptions,
-    //     //   },
-    //     // };
-    //     // let quill = new Quill('#editor', options);
-        
-    //   });
-      // return () => {
-      //   sse.close();
-      // };
-      // return () => {
-      //   connection.close();
-      // };
-
-    
 }, []);
 
 
