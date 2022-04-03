@@ -34,7 +34,7 @@ const connect = share.connect();
 const doc = connect.get('documents', 'firstDocument'); // get the only document
 
 app.get('/', (req, res) => {
-    res.redirect(process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.151.49:3000')
+    res.redirect(process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ':3000')
 })
 
 app.get('/doc/:id', (req, res) => { 
