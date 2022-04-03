@@ -8,6 +8,7 @@ const bodyParser = require('body-parser')
 const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
 // const JSON5 = require('json5')
+const path = require('path')
 
 const PORT = 8080;
 const app = express()
@@ -33,8 +34,11 @@ const connect = share.connect();
 
 const doc = connect.get('documents', 'firstDocument'); // get the only document
 
+const buildFolder = '../gdocs/build'
+
 app.get('/', (req, res) => {
-    res.redirect(process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ':3000')
+    res.redirect('http://localhost:3000')
+    // res.sendFile('build/index.html', {root: path})
 })
 
 app.get('/doc/:id', (req, res) => { 
