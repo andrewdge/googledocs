@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import Quill from 'quill';
+import Quill, { Delta } from 'quill';
 import 'quill/dist/quill.snow.css';
 import Sharedb from 'sharedb/lib/client';
 import richText from 'rich-text';
@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Registering the rich text type to make sharedb work
 // with our quill editor
 Sharedb.types.register(richText.type);
+
 
 // Connecting to our socket server
 // const socket = new WebSocket('ws://127.0.0.1:8080');
@@ -20,19 +21,14 @@ const connection = new Sharedb.Connection(serverBaseURL);
 const doc = connection.get('documents', 'firstDocument');
 
 let id = uuidv4();
+const presence = connection.getDocPresence(doc.collection, doc.id)
+presence.subscribe()
 
 function App() {
 
   useEffect(() => {
     const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true }); // set up event source receiver
-    // doc.fetch((err) => {
-    //   if (err) throw err;
-    //   if (doc.type !== null) {
-    //       console.log('hi')
-    //   }
-    // })
-
-
+  
     const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
         const options = {
           theme: 'snow',
@@ -45,9 +41,12 @@ function App() {
     console.log(sse)
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
+
       let data = JSON.parse(e.data)
-      console.log(data);
-      quill.setContents(data.content); // set initial doc state
+      console.log(data.content)
+      // var cursor = quill.getSelection().index
+      quill.updateContents(data.content); // set initial doc state
+      // quill.setSelection(cursor);
     }
     sse.onerror = (e) => {
       // error log here 
@@ -60,7 +59,7 @@ function App() {
     quill.on('text-change', function (delta, oldDelta, source) {
       if (source !== 'user') return;
       // doc.submitOp(delta, { source: quill });
-      console.log(delta.ops)
+      console.log(id)
       fetch(`${serverBaseURL}/op/${id}`, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
