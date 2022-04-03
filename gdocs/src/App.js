@@ -45,7 +45,7 @@ function App() {
       console.log(e.data)
       let data = JSON.parse(e.data)
       let text;
-      console.log(data.content)
+      if (data.content) console.log(data.content)
       if (data.content === undefined) text = data
       else text = data.content
       // var cursor = quill.getSelection().index
