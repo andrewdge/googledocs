@@ -18,7 +18,7 @@ app.use(bodyParser.json())
 
 app.use(cors({
     credentials: true,
-    origin: ['http://localhost:3000', 'http://localhost:8080']
+    origin: ['http://localhost:3000', 'http://localhost:8080', '209.151.151.49:3000', '209.151.151.49:8080']
 })); // need this since we are on 2 ports
 
 ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
@@ -34,7 +34,7 @@ const connect = share.connect();
 const doc = connect.get('documents', 'firstDocument'); // get the only document
 
 app.get('/', (req, res) => {
-    res.redirect('http://localhost:3000')
+    res.redirect(process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.151.49:3000')
 })
 
 app.get('/doc/:id', (req, res) => { 
