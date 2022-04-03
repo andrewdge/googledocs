@@ -42,7 +42,7 @@ function App() {
     console.log(sse)
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
-      console.log(e)
+      console.log(e.data)
       let data = JSON.parse(e.data)
       let text;
       console.log(data.content)
@@ -63,8 +63,9 @@ function App() {
     quill.on('text-change', function (delta, oldDelta, source) {
       if (source !== 'user') return;
       // doc.submitOp(delta, { source: quill });
-      console.log(id)
+      // console.log(id)
       let payload = JSON.stringify(delta.ops)
+      console.log(payload)
       fetch(`${serverBaseURL}/op/${id}`, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},

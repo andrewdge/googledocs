@@ -46,7 +46,7 @@ app.post('/op/:id', async (req, res) => {
     let ops = req.body
     console.log(ops)
     doc.submitOp(ops, {source: req.params.id}) // submit for changes
-    // res.end()
+    res.end()
 })
 
 app.get('/connect/:id', async (req, res) => {
@@ -65,9 +65,10 @@ app.get('/connect/:id', async (req, res) => {
     let oplist = doc.data.ops // get ops
     let content = JSON.stringify({content: oplist})
     // console.log("indeed")
-    let data = "data: " + content
-    console.log("first req " + data)
-    res.write(data + '\n\n')
+    // let data = "data: " + content
+    // console.log("first req " + data)
+    // res.write(data + '\n\n')
+    res.write("data: " + content + "\n\n")
     doc.on('load', (src) => {
       console.log("load")
     }) 
@@ -76,9 +77,10 @@ app.get('/connect/:id', async (req, res) => {
       // console.log(op)
       // console.log(op)
       let content = JSON.stringify(op)
-      let data = "data: " + content
-      console.log("sub req " + data)
-      res.write(data + '\n\n')
+    //   let data = "data: " + content
+    //   console.log("sub req " + data)
+    //   res.write(data + '\n\n')
+        res.write("data: " + content + "\n\n")
     })
 });
 
