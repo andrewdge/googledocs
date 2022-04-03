@@ -53,7 +53,7 @@ app.get('/connect/:id', async (req, res) => {
     num = 0
     console.log("Connection: " + req.params.id)
     res.writeHead(200, {
-        'Location': 'http://localhost:3000',
+        'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.151.49:3000',
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive'
