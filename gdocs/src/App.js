@@ -41,11 +41,13 @@ function App() {
     console.log(sse)
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
-
       let data = JSON.parse(e.data)
+      let text;
       console.log(data.content)
+      if (data.content === undefined) text = data
+      else text = data.content
       // var cursor = quill.getSelection().index
-      quill.updateContents(data.content); // set initial doc state
+      quill.updateContents(text); // set initial doc state
       // quill.setSelection(cursor);
     }
     sse.onerror = (e) => {

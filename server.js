@@ -37,6 +37,7 @@ app.get('/', (req, res) => {
 app.post('/op/:id', async (req, res) => {
     console.log("operation")
     let ops = req.body
+    console.log(ops)
     doc.submitOp(ops, {source: req.params.id}) // submit for changes
     res.end()
 })
@@ -56,7 +57,8 @@ app.get('/connect/:id', async (req, res) => {
     presence.subscribe()
     let oplist = doc.data.ops // get ops
     let content = JSON.stringify({content: oplist})
-    // console.log(content)
+    console.log("indeed")
+    console.log(content)
     res.write("data: " + content + "\n\n")
     doc.on('load', (src) => {
       console.log("load")
@@ -64,7 +66,8 @@ app.get('/connect/:id', async (req, res) => {
     doc.on('op', (op, src) => {
       if (src == req.params.id) return
       // console.log(op)
-      let content = JSON.stringify({content: op})
+      // console.log(op)
+      let content = JSON.stringify(op)
       res.write("data: " + content + "\n\n")
     })
 
