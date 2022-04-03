@@ -41,10 +41,6 @@ app.get('/', (req, res) => {
     // res.sendFile('build/index.html', {root: path})
 })
 
-app.get('/doc/:id', (req, res) => { 
-    
-})
-
 app.post('/op/:id', async (req, res) => {
     let ops = req.body
     doc.submitOp(ops, {source: req.params.id}) // submit for changes
