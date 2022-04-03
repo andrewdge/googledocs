@@ -61,7 +61,7 @@ app.get('/connect/:id', async (req, res) => {
     let content = JSON.stringify({content: oplist})
     console.log("indeed")
     console.log(content)
-    res.write("data: " + content + "\n\n")
+    res.write("data: " + content )
     doc.on('load', (src) => {
       console.log("load")
     }) 
@@ -70,7 +70,7 @@ app.get('/connect/:id', async (req, res) => {
       // console.log(op)
       // console.log(op)
       let content = JSON.stringify(op)
-      res.write("data: " + content + "\n\n")
+      res.write("data: " + content )
     })
 
     // let firstMessage = true;
