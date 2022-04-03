@@ -14,7 +14,7 @@ Sharedb.types.register(richText.type);
 // const socket = new WebSocket('ws://127.0.0.1:8080');
 // const connection = new Sharedb.Connection(socket);
 
-const serverBaseURL = "http://localhost:8080";
+const serverBaseURL = process.env.NODE_ENV === 'development' ? "http://localhost:8080" : "";
 const connection = new Sharedb.Connection(serverBaseURL);
 
 // Querying for our document
@@ -28,6 +28,7 @@ function App() {
 
   useEffect(() => {
     const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true }); // set up event source receiver
+    console.log('uuid is: ' + id)
   
     const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
         const options = {
@@ -41,9 +42,10 @@ function App() {
     console.log(sse)
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
+      console.log(e.data)
       let data = JSON.parse(e.data)
       let text;
-      console.log(data.content)
+      if (data.content) console.log(data.content)
       if (data.content === undefined) text = data
       else text = data.content
       // var cursor = quill.getSelection().index
@@ -61,14 +63,15 @@ function App() {
     quill.on('text-change', function (delta, oldDelta, source) {
       if (source !== 'user') return;
       // doc.submitOp(delta, { source: quill });
-      console.log(id)
+      // console.log(id)
+      let payload = JSON.stringify(delta.ops)
+      console.log(payload)
       fetch(`${serverBaseURL}/op/${id}`, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(delta.ops)
+        body: payload
       }) // post updates
     });
-   
 }, []);
 
 

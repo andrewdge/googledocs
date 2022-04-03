@@ -18,11 +18,14 @@ app.use(bodyParser.json())
 
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:3000'
+    origin: ['http://localhost:3000', 'http://localhost:8080']
 })); // need this since we are on 2 ports
 
 ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
 
+// const share = new ShareDB();
+// const db = require('sharedb-mongo')('mongodb://localhost:27017/test');
+// const share = new ShareDB({db});
 const share = new ShareDB();
 share.presence = true;
 
@@ -32,6 +35,10 @@ const doc = connect.get('documents', 'firstDocument'); // get the only document
 
 app.get('/', (req, res) => {
     res.redirect('http://localhost:3000')
+})
+
+app.get('/doc/:id', (req, res) => { 
+    
 })
 
 app.post('/op/:id', async (req, res) => {
@@ -60,10 +67,9 @@ app.get('/doc/:id', (req, res) => {
 
 app.get('/connect/:id', async (req, res) => {
     num = 0
-    console.log("Connection: ")
-    console.log(req.params.id)
+    console.log("Connection: " + req.params.id)
     res.writeHead(200, {
-        'Location': 'http://localhost:3000',
+        'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.151.49:3000',
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive'
@@ -71,10 +77,13 @@ app.get('/connect/:id', async (req, res) => {
     res.flushHeaders(); // send headers
     const presence = connect.getDocPresence(doc.collection, doc.id)
     presence.subscribe()
+    //console.log(doc)
     let oplist = doc.data.ops // get ops
     let content = JSON.stringify({content: oplist})
-    console.log("indeed")
-    console.log(content)
+    // console.log("indeed")
+    // let data = "data: " + content
+    // console.log("first req " + data)
+    // res.write(data + '\n\n')
     res.write("data: " + content + "\n\n")
     doc.on('load', (src) => {
       console.log("load")
@@ -82,36 +91,13 @@ app.get('/connect/:id', async (req, res) => {
     doc.on('op', (op, src) => {
       if (src == req.params.id) return
       let content = JSON.stringify(op)
-      res.write("data: " + content + "\n\n")
+    //   let data = "data: " + content
+    //   console.log("sub req " + data)
+    //   res.write(data + '\n\n')
+        res.write("data: " + content + "\n\n")
     })
-
-    // let firstMessage = true;
-    // if (firstMessage) {
-    //     let oplist = doc.data.ops // get ops
-    //     let content = JSON.stringify({content: oplist})
-    //     // console.log(content)
-    //     console.log('first message')
-    //     res.write("data: " + content + "\n\n")
-    //     firstMessage = false
-    // } else {
-    //     // THIS DOES NOT WORK
-    //     console.log('hi')
-    //     // doc.subscribe((e) => {
-    //     //     if (e) throw e;
-    //     //     console.log(doc.data.ops)
-    //     //     res.write("data: " + JSON.stringify(doc.data.ops) + "\n\n")
-    //     // })
-    // }
-    
-    // res.end()
-    // doc.subscribe((e) => {
-    //     if (e) throw e;
-    //     if (doc.type !== null) {
-    //         res.write({ data: { content: }})
-    //     }
-    // })
-    
 });
+
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`)
     doc.fetch(function (err) {
