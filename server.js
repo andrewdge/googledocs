@@ -43,8 +43,9 @@ app.get('/', (req, res) => {
 
 app.post('/op/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    console.log(`op from ${req.params.id}: ${req.body}`)
     let ops = req.body
+    console.log(`op from ${req.params.id}: `)
+    console.log(ops)
     doc.submitOp(ops, {source: req.params.id}) // submit for changes
     res.end()
 })
