@@ -37,15 +37,19 @@ const doc = connect.get('documents', 'firstDocument'); // get the only document
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
 
 app.get('/', (req, res) => {
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
 })
 
 app.post('/op/:id', async (req, res) => {
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    console.log(`op from ${req.params.id}: ${req.body}`)
     let ops = req.body
     doc.submitOp(ops, {source: req.params.id}) // submit for changes
     res.end()
 })
 app.get('/doc/:id', (req, res) => {
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let html = ""
     let oplist = doc.data.ops
     for (var i = 0; i < oplist.length; i++) {
@@ -60,6 +64,7 @@ app.get('/doc/:id', (req, res) => {
       html += insert
     }
     html = "<p>" + html + "</p>"
+    console.log('html sent')
     res.send(html)
     res.end()
 })
@@ -71,7 +76,8 @@ app.get('/connect/:id', async (req, res) => {
         'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
+        'Connection': 'keep-alive',
+        'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
     }) // set up http stream
     res.flushHeaders(); // send headers
     const presence = connect.getDocPresence(doc.collection, doc.id)
@@ -83,6 +89,7 @@ app.get('/connect/:id', async (req, res) => {
     // let data = "data: " + content
     // console.log("first req " + data)
     // res.write(data + '\n\n')
+    console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
     doc.on('load', (src) => {
       console.log("load")
@@ -93,6 +100,7 @@ app.get('/connect/:id', async (req, res) => {
     //   let data = "data: " + content
     //   console.log("sub req " + data)
     //   res.write(data + '\n\n')
+        console.log(`subsequent write: ${content}`)
         res.write("data: " + content + "\n\n")
     })
 });
@@ -102,7 +110,7 @@ app.listen(PORT, () => {
     doc.fetch(function (err) {
         if (err) throw err;
         if (doc.type === null) {
-            doc.create([{ insert: 'Hello World!' }], 'rich-text', () => {});
+            doc.create([], 'rich-text', () => {});
             console.log('doc created')
             // console.log(doc.data)
             return;
