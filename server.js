@@ -2,6 +2,7 @@
 // const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 const ShareDB = require('sharedb');
 const express = require('express')
+const DeltaConverter = require('quill-delta-to-html').QuillDeltaToHtmlConverter;
 // const http = require('http')
 const bodyParser = require('body-parser')
 // const session = require('express-session')
@@ -51,21 +52,9 @@ app.post('/op/:id', async (req, res) => {
 })
 app.get('/doc/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    let html = ""
-    let oplist = doc.data.ops
-    for (var i = 0; i < oplist.length; i++) {
-      let op = oplist[i]
-      let insert = op.insert
-      insert = insert.replace("\n", "<br />")
-      if (op.attributes) {
-        if (op.attributes.bold) insert = "<strong>" + insert + "</strong>"
-        if (op.attributes.italic) insert = "<em>" + insert + "</em>"
-        if (op.attributes.underline) insert = "<u>" + insert + "</u>"
-      }
-      html += insert
-    }
-    html = "<p>" + html + "</p>"
-    console.log('html sent')
+    var cfg = {}
+    var converter = new DeltaConverter(doc.data.ops, cfg)
+    var html = converter.convert()
     res.send(html)
     res.end()
 })
@@ -92,9 +81,6 @@ app.get('/connect/:id', async (req, res) => {
     // res.write(data + '\n\n')
     console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
-    doc.on('load', (src) => {
-      console.log("load")
-    }) 
     doc.on('op', (op, src) => {
       if (src == req.params.id) return
       let content = JSON.stringify(op)
