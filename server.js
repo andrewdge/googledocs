@@ -44,10 +44,14 @@ app.get('/', (req, res) => {
 
 app.post('/op/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    let ops = req.body
+    let ops = req.body // Array of arrays of OTs
     console.log(`op from ${req.params.id}: `)
     console.log(ops)
-    doc.submitOp(ops, {source: req.params.id}) // submit for changes
+    for (var i = 0; i < ops.length; i++) {
+      doc.submitOp(ops[i], {source: req.params.id})
+    }
+    console.log("Doc after ops")
+    console.log(doc.data.ops)
     res.end()
 })
 app.get('/doc/:id', (req, res) => {
@@ -64,7 +68,7 @@ app.get('/connect/:id', async (req, res) => {
     console.log("Connection: " + req.params.id)
     res.writeHead(200, {
         'X-Accel-Buffering' : 'no',
-        // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
+        'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
@@ -76,18 +80,12 @@ app.get('/connect/:id', async (req, res) => {
     //console.log(doc)
     let oplist = doc.data.ops // get ops
     let content = JSON.stringify({content: oplist})
-    // console.log("indeed")
-    // let data = "data: " + content
-    // console.log("first req " + data)
-    // res.write(data + '\n\n')
+    //let content = JSON.stringify({content: oplist})
     console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
     doc.on('op', (op, src) => {
       if (src == req.params.id) return
       let content = JSON.stringify(op)
-    //   let data = "data: " + content
-    //   console.log("sub req " + data)
-    //   res.write(data + '\n\n')
         console.log(`subsequent write: ${content}`)
         res.write("data: " + content + "\n\n")
     })

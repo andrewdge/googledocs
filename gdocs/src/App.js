@@ -16,6 +16,7 @@ Sharedb.types.register(richText.type);
 
 const serverBaseURL = process.env.NODE_ENV === 'development' ? "http://localhost:8080" : "";
 const connection = new Sharedb.Connection(serverBaseURL);
+let buffer = []
 
 // Querying for our document
 const doc = connection.get('documents', 'firstDocument');
@@ -42,15 +43,12 @@ function App() {
     console.log(sse)
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
-      console.log(e.data)
       let data = JSON.parse(e.data)
       let text;
       if (data.content) console.log(data.content)
       if (data.content === undefined) text = data
       else text = data.content
-      // var cursor = quill.getSelection().index
       quill.updateContents(text); // set initial doc state
-      // quill.setSelection(cursor);
     }
     sse.onerror = (e) => {
       // error log here 
@@ -61,16 +59,13 @@ function App() {
 
     quill.setContents(doc.data);
     quill.on('text-change', function (delta, oldDelta, source) {
+      console.log("timely")
       if (source !== "user") return;
-      // doc.submitOp(delta, { source: quill });
-      // console.log(id)
-      let payload = JSON.stringify(delta.ops)
+      let payload = (delta.ops)
       console.log(payload)
-      fetch(`${serverBaseURL}/op/${id}`, {
-        method: "POST",
-        headers: {'Content-Type': 'application/json'},
-        body: payload
-      }) // post updates
+      buffer.push(payload)
+      console.log("righteous")
+      var interval = setInterval(submitBuffer, 2000, buffer)
     });
 }, []);
 
@@ -80,6 +75,18 @@ function App() {
       <div id='editor'></div>
     </div>
   );
+}
+function submitBuffer() {
+
+  if (buffer.length == 0) {
+    return;
+  }
+  fetch(`${serverBaseURL}/op/${id}`, {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(buffer)
+  }) // post updates
+  buffer = []
 }
 
 export default App;
