@@ -61,6 +61,7 @@ function App() {
 
     quill.setContents(doc.data);
     quill.on('text-change', function (delta, oldDelta, source) {
+      if (source !== "user") return;
       // doc.submitOp(delta, { source: quill });
       // console.log(id)
       let payload = JSON.stringify(delta.ops)
