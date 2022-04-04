@@ -78,7 +78,7 @@ function App() {
 }
 function submitBuffer() {
 
-  if (buffer.length == 0) {
+  if (buffer.length === 0) {
     return;
   }
   fetch(`${serverBaseURL}/op/${id}`, {

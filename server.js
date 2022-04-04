@@ -68,7 +68,7 @@ app.get('/connect/:id', async (req, res) => {
     console.log("Connection: " + req.params.id)
     res.writeHead(200, {
         'X-Accel-Buffering' : 'no',
-        'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
+        // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
@@ -83,11 +83,11 @@ app.get('/connect/:id', async (req, res) => {
     //let content = JSON.stringify({content: oplist})
     console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
-    doc.on('op', (op, src) => {
+    doc.on('op batch', (op, src) => {
       if (src == req.params.id) return
       let content = JSON.stringify(op)
         console.log(`subsequent write: ${content}`)
-        res.write("data: " + content + "\n\n")
+        res.write("data: " + "[" + content + "]" + "\n\n")
     })
 });
 
