@@ -34,11 +34,10 @@ const connect = share.connect();
 
 const doc = connect.get('documents', 'firstDocument'); // get the only document
 
-const buildFolder = '../gdocs/build'
+app.use(express.static(path.join(__dirname, '/gdocs/build')))
 
 app.get('/', (req, res) => {
-    res.redirect('http://localhost:3000')
-    // res.sendFile('build/index.html', {root: path})
+    res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
 })
 
 app.post('/op/:id', async (req, res) => {
