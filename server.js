@@ -1,5 +1,5 @@
-// const WebSocket = require('ws');
-// const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
+const WebSocket = require('ws');
+const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 const ShareDB = require('sharedb');
 const express = require('express')
 const DeltaConverter = require('quill-delta-to-html').QuillDeltaToHtmlConverter;
@@ -28,12 +28,21 @@ ShareDB.types.register(require('rich-text').type); // type registration, rich te
 // const share = new ShareDB();
 // const db = require('sharedb-mongo')('mongodb://localhost:27017/test');
 // const share = new ShareDB({db});
-const share = new ShareDB();
-share.presence = true;
+//Set sharedb presence to true, and do not forward presence error to clients
+const share = new ShareDB({presence: true, doNotForwardSendPresenceErrorsToClient: true });
+const wss = new WebSocket.Server({port: 8090}); //Webserver for clients to connect to sharedb
+const ws = new WebSocket("ws://localhost:8090") //websocket for sharedb connection
+wss.on('connection', (webSocket) => {
+    share.listen(new WebSocketJSONStream(webSocket)); 
+})
 
 const connect = share.connect();
 
 const doc = connect.get('documents', 'firstDocument'); // get the only document
+//doc.preventCompose = true;
+//console.log(doc)
+const presence = connect.getDocPresence(doc.collection, doc.id)
+presence.subscribe();
 
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
 
@@ -75,21 +84,28 @@ app.get('/connect/:id', async (req, res) => {
         'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
     }) // set up http stream
     res.flushHeaders(); // send headers
-    const presence = connect.getDocPresence(doc.collection, doc.id)
-    presence.subscribe()
-    //console.log(doc)
     let oplist = doc.data.ops // get ops
     let content = JSON.stringify({content: oplist})
     //let content = JSON.stringify({content: oplist})
+    presence.create(req.params.id);
     console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
     doc.on('op batch', (op, src) => {
       if (src == req.params.id) return
-      let content = JSON.stringify(op)
+      let content = JSON.stringify({content: op})
         console.log(`subsequent write: ${content}`)
-        res.write("data: " + "[" + content + "]" + "\n\n")
-    })
+        res.write("data: " + content + "\n\n")
+    });
 });
+
+//Presence id API
+app.post("/presence/:id", async (req,res) =>{
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    //Use the corresponding local presence to submit the provided location (range) of cursor
+    presence.localPresences[req.params.id].submit(req.body);
+    res.end();
+    
+})
 
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`)
