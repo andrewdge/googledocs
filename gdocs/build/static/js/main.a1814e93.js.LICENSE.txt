@@ -11,6 +11,8 @@ object-assign
  * Copyright (c) 2013, salesforce.com
  */
 
+/*! For license information please see quill-cursors.js.LICENSE.txt */
+
 /** @license React v0.19.1
  * scheduler.production.min.js
  *
