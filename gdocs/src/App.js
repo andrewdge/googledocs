@@ -17,8 +17,10 @@ Quill.register('modules/cursors', QuillCursors);
 // const connection = new Sharedb.Connection(socket);
 
 const serverBaseURL = process.env.NODE_ENV === 'development' ? "http://localhost:8080" : "";
-//Web socet to connect to webserver hosting sharedb  
-const connection = new Sharedb.Connection(new ReconnectingWebSocket(`ws://localhost:8090`));
+//Web socet to connect to webserver hosting sharedb
+const websocketURL = `ws://${window.location.hostname}:8090`
+console.log(window.location.hostname);  
+const connection = new Sharedb.Connection(new ReconnectingWebSocket(websocketURL));
 let buffer = []
 
 // Querying for our document
