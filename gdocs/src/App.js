@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Quill, { Delta } from 'quill';
 import 'quill/dist/quill.snow.css';
 import Sharedb from 'sharedb/lib/client';
@@ -27,6 +27,8 @@ presence.subscribe()
 
 function App() {
 
+  const [count, setCount] = useState(0)
+
   useEffect(() => {
     const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true }); // set up event source receiver
     console.log('uuid is: ' + id)
@@ -43,18 +45,32 @@ function App() {
     console.log(sse)
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
-      let data = JSON.parse(e.data)
+      let data = JSON.parse(e.data) 
       let text;
       if (data.content) console.log(data.content)
-      if (data.content === undefined) text = data
-      else text = data.content
-      quill.updateContents(text); // set initial doc state
+      if (data.content === undefined) {
+        console.log("LOADING CHANGE:");
+        text = data[0];
+        console.log(text);
+      }
+      else {
+        console.log("LOADING:")
+        text = data.content
+        console.log(text)
+      }
+        console.log(quill.updateContents(text)); // set initial doc state
+      
     }
     sse.onerror = (e) => {
       // error log here 
       // console.log('hi')
       console.log(e);
-      // sse.close();
+      sse.close();
+    }
+
+    window.disconnect = function () {
+      console.log("CLOSING connection")
+      sse.close();
     }
 
     quill.setContents(doc.data);
