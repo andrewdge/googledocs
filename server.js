@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 const ShareDB = require('sharedb');
 const express = require('express')
+const { MongoClient, ServerApiVersion } = require('mongodb');
 const DeltaConverter = require('quill-delta-to-html').QuillDeltaToHtmlConverter;
 // const http = require('http')
 const bodyParser = require('body-parser')
@@ -43,10 +44,6 @@ app.use(cors({
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'ejs')
 
-mongoose.Promise = global.Promise;
-(async () => await connection())();
-const db = mongoose.connection
-
 let transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     service: 'gmail',
@@ -58,6 +55,19 @@ let transporter = nodemailer.createTransport({
     }
 })
 //here
+
+
+
+mongoose.Promise = global.Promise;
+(async () => await connection())();
+// mongoose.connect(`mongodb://admin:password@localhost:27017`, {useNewUrlParser: true}, function (err) {
+//   if (err) throw err;
+//   console.log("successfully connected");
+// })
+const db = mongoose.connection
+
+
+
 
 ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
 
@@ -83,6 +93,11 @@ presence.subscribe();
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
 
 app.get('/', (req, res) => {
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+})
+
+app.get('/home', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
 })
