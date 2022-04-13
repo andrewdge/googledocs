@@ -1,4 +1,5 @@
-import { Outlet, Link } from "react-router-dom";
+import React, { useState } from 'react';
+import { Navigate, Outlet, Link } from "react-router-dom";
 import Login from "./components/login"
 import Logout from "./components/logout"
 import { useCookies } from 'react-cookie';
@@ -15,10 +16,9 @@ export default function App() {
     <div>
       <div>
         {cookies.name ? 
-        <>
-          <h1>Hello {cookies.name} with id {cookies.id}!</h1> 
-          <Logout />
-        </>
+          <Navigate to={{
+            pathname: "/home"
+          }}/>
         : 
         <Login />}
       </div>
