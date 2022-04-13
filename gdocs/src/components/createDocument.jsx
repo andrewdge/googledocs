@@ -24,6 +24,8 @@ export default function CreateDocument() {
                 console.log(name + " was submitted")
             }
         }
+        
+        // e.preventDefault()
     }
 
     const handleChange = (e) => {
@@ -35,7 +37,7 @@ export default function CreateDocument() {
             <form onSubmit={handleSubmit}>
                 <label>
                     Document Name:
-                    <input type="text" name="name" value={name} onChange={handleChange} />
+                    <input type="text" value={name} onChange={handleChange} />
                 </label>
                 <input type="submit" value="Add Document" />
             </form>

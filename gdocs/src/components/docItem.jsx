@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useCookies } from 'react-cookie';
 import { useEffect, useState } from 'react'
 
-export default function DocList({key, id, name}) {
+export default function DocList({key, id, name, deleteDoc}) {
     // const [cookies, setCookie, removeCookie] = useCookies();
 
     const handleDelete = async (e) => {
@@ -19,6 +19,7 @@ export default function DocList({key, id, name}) {
         if (req) {
             console.log("doc: " + name + " with id: "+ id + " was submitted")
         }
+        deleteDoc(id)
     }
 
 
