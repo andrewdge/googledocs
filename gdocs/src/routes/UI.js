@@ -25,7 +25,7 @@ const connection = new Sharedb.Connection(new ReconnectingWebSocket(websocketURL
 let buffer = []
 
 // Querying for our document
-const doc = connection.get('documents', 'firstDocument');
+const doc = connection.get('documents', 'firstDocument'); // should be deleted
 
 let id = uuidv4();
 
@@ -33,6 +33,7 @@ function UI() {
   let params = useParams();
 
   useEffect(() => {
+    // Fetch for doc data should be here
     const cursorColors = {}
     const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true }); // set up event source receiver
     console.log('uuid is: ' + id)
@@ -50,7 +51,6 @@ function UI() {
     doc.subscribe();
     const presence = connection.getDocPresence(doc.collection, doc.id)
     presence.subscribe();
-    const localPresence = presence.create(id);
     
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
@@ -77,7 +77,6 @@ function UI() {
       console.log("CLOSING connection")
       sse.close();
     }
-
     quill.setContents(doc.data);
     quill.on('text-change', async function (delta, oldDelta, source) {
       if (source !== "user") return;

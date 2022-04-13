@@ -82,6 +82,14 @@ wss.on('connection', (webSocket) => {
 })
 const connect = share.connect();
 
+/*
+To work with multiple documents, clicking on a document from the home page should open up a /doc/get/DOCID/UID for the current
+document.
+1. Client clicks on link, routes to the page from the link (UID and DOCID should be in the link)
+2. Get request for a specific doc ID
+3. Client side, the user gets presence for that doc and subscribes to it.
+*/
+
 // Retrieve first/only document
 let doc = connect.get('documents', 'firstDocument');
 
@@ -196,7 +204,7 @@ app.get('/doc/:id', (req, res) => {
     res.end()
 })
 
-app.get('/doc/edit/:id', (req, res) => {
+app.get('/doc/edit/:docid', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.cookies && req.cookies.id && req.cookies.name) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
