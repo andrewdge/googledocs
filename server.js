@@ -27,25 +27,29 @@ const app = express()
 // const server = http.createServer(app)
 // const wss = new WebSocket.Server({ server: server })
 
-
+// For image/file limit
 app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
 app.use(bodyParser.json({ limit: '50mb' }))
 app.use(cookieParser())
+// Set up cookies
 app.use(session({
     secret: 'keyboard cat',
     resave: true,
     saveUninitialized: true
 }));
 
+// CORS between the front/backend
 app.use(cors({
     credentials: true,
     origin: ['http://localhost:3000', 'http://localhost:8080', '209.151.149.120:3000', '209.151.149.120:8080']
 })); // need this since we are on 2 ports
 
-// here
-app.set('views', path.join(__dirname, 'views'))
-app.set('view engine', 'ejs')
+// Probably not needed
+// app.set('views', path.join(__dirname, 'views'))
+// app.set('view engine', 'ejs')
 
+
+// TODO: Nodemailer with Postfix
 let transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     service: 'gmail',
@@ -56,45 +60,45 @@ let transporter = nodemailer.createTransport({
         pass: process.env.MAIL_PASSWORD,
     }
 })
-//here
 
-
-
+// Mongoose setup
 mongoose.Promise = global.Promise;
 (async () => await connection())();
-// mongoose.connect(`mongodb://admin:password@localhost:27017`, {useNewUrlParser: true}, function (err) {
-//   if (err) throw err;
-//   console.log("successfully connected");
-// })
+
+// ShareDB + Mongo set up
 const db = mongoose.connection
 ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
 
-// const share = new ShareDB();
 const docDB = MongoShareDB('mongodb+srv://andrew:andrewge@cluster0.f9prs.mongodb.net/main?retryWrites=true&w=majority');
 // const share = new ShareDB({db});
 //Set sharedb presence to true, and do not forward presence error to clients
 const share = new ShareDB({db: docDB, presence: true, doNotForwardSendPresenceErrorsToClient: true });
+
+// ShareDB connection
 const wss = new WebSocket.Server({ port: 8090 }); //Webserver for clients to connect to sharedb
 const ws = new WebSocket("ws://localhost:8090") //websocket for sharedb connection
 wss.on('connection', (webSocket) => {
     share.listen(new WebSocketJSONStream(webSocket));
 })
-
 const connect = share.connect();
 
-let doc = connect.get('documents', 'firstDocument'); // get the only document
-//doc.preventCompose = true;
-//console.log(doc)
+// Retrieve first/only document
+let doc = connect.get('documents', 'firstDocument');
+
+// Presence for mouse pointers
 let presence = connect.getDocPresence(doc.collection, doc.id)
 presence.subscribe();
 
+// Set static path from which to send file
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
 
+// Base route - To login/register, redirects to home if logged in. All other paths require auth
 app.get('/', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
 })
 
+// Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.cookies && req.cookies.id && req.cookies.name) {
@@ -104,6 +108,7 @@ app.get('/home', (req, res) => {
     }
 })
 
+// Document creation 
 app.post('/collection/create', (req, res) => {
     console.log('creating doc')
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
@@ -116,6 +121,7 @@ app.post('/collection/create', (req, res) => {
     });
 })
 
+// Document deletion
 app.post('/collection/delete', (req, res) => {
     console.log('deleting doc')
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
@@ -134,6 +140,7 @@ app.post('/collection/delete', (req, res) => {
     });
 })
 
+// Fetch recently used docs
 app.get('/collection/list', (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
@@ -148,6 +155,8 @@ app.get('/collection/list', (req, res) => {
         return res.json(JSON.stringify(documents));
     })
 })
+
+// Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
 app.post("/media/upload", async (req, res) => {
   var id = uuid.v4()
   var uri = req.body[0].insert.image
@@ -169,7 +178,7 @@ app.get("/media/access/:mediaid", (req, res) => {
   res.sendFile(`./images/${id}.png`, {root: __dirname})
 })
 
-
+// TODO: edit so takes in DOCID and OPID
 app.post('/doc/op/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let ops = req.body // Array of arrays of OTs
@@ -177,6 +186,7 @@ app.post('/doc/op/:id', async (req, res) => {
     res.end()
 })
 
+// Not required?
 app.get('/doc/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var cfg = {}
@@ -195,6 +205,7 @@ app.get('/doc/edit/:id', (req, res) => {
     }
 })
 
+// TODO: Has to also take in userID: /doc/connect/DOCID/UID
 app.get('/doc/connect/:id', async (req, res) => {
     num = 0
 
@@ -221,7 +232,7 @@ app.get('/doc/connect/:id', async (req, res) => {
     });
 });
 
-//Presence id API
+// Presence id API
 app.post("/doc/presence/:id", async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     //Use the corresponding local presence to submit the provided location of cursor
@@ -230,7 +241,7 @@ app.post("/doc/presence/:id", async (req, res) => {
 
 })
 
-
+// Login route
 app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 	let user = await User.findOne({ username: req.body.username, password: req.body.password, verified: true });
@@ -249,6 +260,7 @@ app.post("/users/login", async (req, res) => {
 	}
 })
 
+// Logout route
 app.post("/users/logout", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 	if (req.cookies.id !== req.sessionID) {
@@ -266,6 +278,7 @@ app.post("/users/logout", async (req, res) => {
 	}
 })
 
+// Signup route. TODO: Mail fix
 app.post("/users/signup", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     let user = await User.findOne({ email: req.body.email });
@@ -297,6 +310,7 @@ app.post("/users/signup", async (req, res) => {
     }
 })
 
+// Verify route
 app.get("/users/verify", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     let user = await User.findOne({ email: req.query.email });
@@ -311,7 +325,7 @@ app.get("/users/verify", async (req, res) => {
     }
 })
 
-
+// Server start
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`)
     doc.fetch(function (err) {
