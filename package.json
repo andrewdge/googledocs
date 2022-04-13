@@ -2,7 +2,8 @@
   "scripts": {
     "frontend": "cd gdocs && npm start",
     "server": "nodemon server.js",
-    "start": "concurrently \"npm:server\" \"npm:frontend\""
+    "cocurrent": "concurrently \"npm:server\" \"npm:frontend\"",
+    "start": "nodemon server.js"
   },
   "dependencies": {
     "@teamwork/websocket-json-stream": "^2.0.0",

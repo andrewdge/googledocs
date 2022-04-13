@@ -159,11 +159,6 @@ app.post("/presence/:id", async (req, res) => {
 })
 
 
-// Users
-app.get("/users", async (req, res) => {
-    res.render('user', { title: 'i like potato', message: 'haha' })
-})
-
 app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 	let user = await User.findOne({ username: req.body.username, password: req.body.password, verified: true });
@@ -179,7 +174,14 @@ app.post("/users/login", async (req, res) => {
 			req.session.score = { "human": 0, "wopr": 0, "tie": 0 }
 		}
 		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-		res.cookie('id', req.sessionID).json({ status: "OK" });
+        let cookie = {
+            'id': req.sessionID,
+            'name': req.body.username
+        }
+		res.cookie('id', req.sessionID);
+        res.cookie('name', req.body.username);
+        res.redirect('/home')
+        // res.json({ status: "OK" });
 	} else {
 		console.log('Could not find user: ' + req.body.username)
 		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
@@ -223,8 +225,8 @@ app.post("/users/signup", async (req, res) => {
             from: '"I like llamas" <testing356email@gmail.com>',
             to: req.body.email,
             subject: 'Verification Password',
-            text: "209.151.153.183:8080/users/verify?email=email&key=KEY",
-            html: "<div>209.151.153.183:8080/users/verify?email=email&key=KEY</div>"
+            text: `209.151.153.183:8080/users/verify?email=${req.body.email}&key=KEY`,
+            html: `<div>209.151.153.183:8080/users/verify?email=${req.body.email}&key=KEY</div>`
         }
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
@@ -246,7 +248,8 @@ app.get("/users/verify", async (req, res) => {
         await User.updateOne({ email: req.query.email }, { verified: true });
         user = await User.findOne({ email: req.query.email });
         console.log('verified')
-        res.json({ status: "OK" })
+        res.redirect('/home')
+        // res.json({ status: "OK" })
     } else {
         console.log('failed to verify');
         res.json({ status: "ERROR" });

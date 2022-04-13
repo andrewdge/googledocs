@@ -23,10 +23,11 @@ export default function App() {
     //   <Outlet />
     // </div>
     <div>
-      <Login />
       <div>
         {cookies.name && <h1>Hello {cookies.name}!</h1>}
       </div>
+      <Login />
+      
     </div>
   );
 }

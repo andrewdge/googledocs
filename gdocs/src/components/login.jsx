@@ -32,13 +32,14 @@ export default function Login() {
                     <input id="username" name="username" type="text" required />
                 </section>
                 <section>
-                    <label for="password">Password</label>
-                    <input id="password" name="password" type="text" required />
-                </section>
-                <section>
                     <label for="email">Email</label>
                     <input id="email" name="email" type="text" required />
                 </section>
+                <section>
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="text" required />
+                </section>
+                
                 <input type="submit" value="Submit" />
                 
             </form>
