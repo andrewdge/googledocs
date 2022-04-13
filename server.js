@@ -16,9 +16,10 @@ const cookieParser = require('cookie-parser')
 const nodemailer = require('nodemailer')
 const dotenv = require('dotenv').config()
 const connection = require('./db.js')
-const { User, validate } = require('./users/user')
+const { User, validate } = require('./models/user')
 const download = require('image-downloader')
-
+const { v4 } = require('uuid');
+const MongoShareDB = require('sharedb-mongo');
 
 
 const PORT = 8080;
@@ -69,10 +70,10 @@ const db = mongoose.connection
 ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
 
 // const share = new ShareDB();
-// const db = require('sharedb-mongo')('mongodb://localhost:27017/test');
+const docDB = MongoShareDB('mongodb+srv://andrew:andrewge@cluster0.f9prs.mongodb.net/main?retryWrites=true&w=majority');
 // const share = new ShareDB({db});
 //Set sharedb presence to true, and do not forward presence error to clients
-const share = new ShareDB({ presence: true, doNotForwardSendPresenceErrorsToClient: true });
+const share = new ShareDB({db: docDB, presence: true, doNotForwardSendPresenceErrorsToClient: true });
 const wss = new WebSocket.Server({ port: 8090 }); //Webserver for clients to connect to sharedb
 const ws = new WebSocket("ws://localhost:8090") //websocket for sharedb connection
 wss.on('connection', (webSocket) => {
@@ -81,10 +82,10 @@ wss.on('connection', (webSocket) => {
 
 const connect = share.connect();
 
-const doc = connect.get('documents', 'firstDocument'); // get the only document
+let doc = connect.get('documents', 'firstDocument'); // get the only document
 //doc.preventCompose = true;
 //console.log(doc)
-const presence = connect.getDocPresence(doc.collection, doc.id)
+let presence = connect.getDocPresence(doc.collection, doc.id)
 presence.subscribe();
 
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
@@ -105,14 +106,47 @@ app.get('/home', (req, res) => {
 
 app.post('/collection/create', (req, res) => {
     console.log('creating doc')
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    let docid = v4(); 
+    let newDoc = connect.get('documents', docid);
+    newDoc.fetch(function(err){
+        if(err || newDoc.type !== null) return res.json({ status: "ERROR" });
+        newDoc.create({title: req.body.name}, 'rich-text', () => { });
+        res.json({docid: newDoc.id});
+    });
 })
 
 app.post('/collection/delete', (req, res) => {
-
+    console.log('deleting doc')
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
+    let delDoc = connect.get('documents', req.body.docid);
+    delDoc.fetch(function(err){
+        if(err) {
+            console.log(err);
+            return res.json({ status: "ERROR" });
+        }
+        if(delDoc.type === null) return res.json({ status: "ERROR" });
+        delDoc.destroy(function(err){
+            if(err) console.log(err);
+        })
+        console.log(`Deleting document ${req.body.docid}`);
+        res.end();
+    });
 })
 
 app.get('/collection/list', (req, res) => {
-    
+    console.log('Fetching top 10 most recent docs');
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
+    let query = connect.createFetchQuery('documents', {$orderby: {"_m.mtime": -1}, $limit: 10});
+    query.on('ready', () =>{
+        console.log(query.results.length)
+        let documents = query.results.map((element,index) => {
+            return {id: element.id, name: element.data.name}
+        });
+
+        console.log(documents);
+        return res.json(JSON.stringify(documents));
+    })
 })
 app.post("/media/upload", async (req, res) => {
   var id = uuid.v4()
@@ -190,7 +224,7 @@ app.get('/doc/connect/:id', async (req, res) => {
 //Presence id API
 app.post("/doc/presence/:id", async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    //Use the corresponding local presence to submit the provided location (range) of cursor
+    //Use the corresponding local presence to submit the provided location of cursor
     presence.localPresences[req.params.id].submit(req.body);
     res.end();
 
