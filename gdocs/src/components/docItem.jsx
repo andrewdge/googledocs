@@ -1,8 +1,8 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Navigate, useNavigate, Link } from "react-router-dom";
 import { useCookies } from 'react-cookie';
 import { useEffect, useState } from 'react'
 
-export default function DocList({key, id, name, deleteDoc}) {
+export default function DocItem({key, id, name, deleteDoc}) {
     // const [cookies, setCookie, removeCookie] = useCookies();
 
     const handleDelete = async (e) => {
@@ -26,7 +26,9 @@ export default function DocList({key, id, name, deleteDoc}) {
     return (
         <div style={{ display: "flex", flexDirection: "row", marginBottom: 10 }}>
             <div key={key} style={{ fontWeight: "semibold", fontSize: 20, marginRight: 100 }}>
-                {name}
+                <Link to={`/doc/edit/${id}`}>
+                    {name}
+                </Link>
             </div>
             <button onClick={handleDelete}>
                 Delete
