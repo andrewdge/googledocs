@@ -6,22 +6,29 @@ export default function DocList() {
     // const [cookies, setCookie, removeCookie] = useCookies();
     let navigate = useNavigate();
 
-    const [docs, ignore] = useState('')
+    const [docs, setDocs] = useState([])
+
     
 
     useEffect(() => {
         const fetchDocs = async () => {
             let req = await fetch('/collection/list', {
-                method: "GET"
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
             })
-            console.log(req)
+            let data = await req.json();
+            setDocs(JSON.parse(data));
+            if (docs) console.log(docs)
         }
         fetchDocs()
-    }, [])
+    }, []) // ITS A WARNING BUT IT MUST STAY THIS WAY
 
     return (
         <>
             <div>Hi</div>
+            <ul>{docs.map((obj) => <li key={obj.id}>{obj.id}</li>)}</ul>
         </>
     );
 }

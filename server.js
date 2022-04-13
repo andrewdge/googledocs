@@ -143,7 +143,7 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    let query = connect.createFetchQuery('documents', {$orderby: {"_m.mtime": -1}, $limit: 10});
+    let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
     query.on('ready', () =>{
         console.log(query.results.length)
         let documents = query.results.map((element,index) => {
@@ -151,7 +151,10 @@ app.get('/collection/list', (req, res) => {
         });
 
         console.log(documents);
-        return res.json(JSON.stringify(documents));
+        json = JSON.stringify(documents);
+        console.log(typeof json)
+        console.log(json)
+        return res.json(json);
     })
 })
 
