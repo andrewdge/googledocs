@@ -192,6 +192,7 @@ app.post("/users/login", async (req, res) => {
 
 app.post("/users/logout", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
+    console.log('logged out')
 	if (req.cookies.id !== req.sessionID) {
 		console.log('Not logged in');
 		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
