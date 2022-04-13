@@ -85,14 +85,15 @@ const connect = share.connect();
 
 /*
 Presence subscribed to for each client on a single doc.
-1. Client enters doc via GET doc/connect/DOCID/UID route. Start connection
-2. Client asks for doc editor via GET doc/edit/DOCID route
-3. Client subscribes to the presence of the document
-4. On change for client-side, send on the OP route their UID and DOCID and delta the given document.
+1.X Client enters doc via GET doc/connect/DOCID/UID route. Start connection
+2.X Client asks for doc editor via GET doc/edit/DOCID route
+3.X Client subscribes to the presence of the document
+4.X On change for client-side, send on the OP route their UID and DOCID and delta the given document.
 5. doc/get/DOCID/UID returns html for given document.
 
 
 */
+
 
 // Set static path from which to send file
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
@@ -206,16 +207,18 @@ app.get("/media/access/:mediaid", (req, res) => {
 })
 
 // TODO: edit so takes in DOCID and OPID
-app.post('/doc/op/:id', async (req, res) => {
+app.post('/doc/op/:docid/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    let doc = connect.get("documents", req.params.docid)
     let ops = req.body // Array of arrays of OTs
     doc.submitOp(ops, { source: req.params.id })
     res.end()
 })
 
 // Not required?
-app.get('/doc/:id', (req, res) => {
+app.get('/doc/get/:docid/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    var doc = connect.get('documents', req.params.docid);
     var cfg = {}
     var converter = new DeltaConverter(doc.data.ops, cfg)
     var html = converter.convert()
@@ -233,7 +236,8 @@ app.get('/doc/edit/:docid', (req, res) => {
 })
 
 // TODO: Has to also take in userID: /doc/connect/DOCID/UID
-app.get('/doc/connect/:id', async (req, res) => {
+app.get('/doc/connect/:docid/:id', async (req, res) => {
+    console.log("connectaffffffffffffffffffffasdfsaaADFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
     num = 0
     res.writeHead(200, {
         'X-Accel-Buffering': 'no',
@@ -244,13 +248,20 @@ app.get('/doc/connect/:id', async (req, res) => {
         'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
     }) // set up http stream
     res.flushHeaders(); // send headers
-    let oplist = doc.data.ops // get ops
+    let doc = connect.get("documents", req.params.docid)// get ops
+    console.log(doc)
+    console.log(doc.data)
+    let oplist = doc.data.ops
+
+
     let content = JSON.stringify({ content: oplist })
     //let content = JSON.stringify({content: oplist})
-    presence.create(req.params.id);
+    // let presence = connect.getDocPresence(doc.collection, doc.id)
+    // presence.subscribe();
+    // presence.create(req.params.docid);
     console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
-    doc.on('op batch', (op, src) => {
+    doc.on('op', (op, src) => {
         if (src == req.params.id) return
         let content = JSON.stringify({ content: op })
         console.log(`subsequent write: ${content}`)
@@ -259,10 +270,12 @@ app.get('/doc/connect/:id', async (req, res) => {
 });
 
 // Presence id API
-app.post("/doc/presence/:id", async (req, res) => {
+app.post("/doc/presence/:docid/:id", async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     //Use the corresponding local presence to submit the provided location of cursor
-    presence.localPresences[req.params.id].submit(req.body);
+    let doc = connect.get("documents", req.params.docid)
+    // let presence = connect.getDocPresence(doc.collection, doc.id)
+    // presence.localPresences[req.params.docid].submit(req.body);
     res.end();
 
 })

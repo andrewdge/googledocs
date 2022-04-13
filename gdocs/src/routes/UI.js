@@ -25,19 +25,21 @@ const connection = new Sharedb.Connection(new ReconnectingWebSocket(websocketURL
 let buffer = []
 
 // Querying for our document
-const doc = connection.get('documents', 'firstDocument'); // should be deleted
+var docid
+var doc
+
 
 let id = uuidv4();
 
 function UI() {
-  let params = useParams();
-
+  const params = useParams()
+  docid = params.docid
+  doc = connection.get('documents', docid);
   useEffect(() => {
     // Fetch for doc data should be here
+    console.log("ussing na effect!!!")
     const cursorColors = {}
-    const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true }); // set up event source receiver
-    console.log('uuid is: ' + id)
-  
+    const sse = new EventSource(`${serverBaseURL}/doc/connect/${docid}/${id}`, { withCredentials: true }); // set up event source receiver
     const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'], ["image"] ];
         const options = {
           theme: 'snow',
@@ -49,11 +51,12 @@ function UI() {
     let quill = new Quill('#editor', options); // setup quill
     let cursors = quill.getModule("cursors");
     doc.subscribe();
-    const presence = connection.getDocPresence(doc.collection, doc.id)
+    const presence = connection.getDocPresence(doc.collection, docid)
     presence.subscribe();
     
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
+      console.log("received")
       let data = JSON.parse(e.data) 
       let text;
       if (data.content) console.log(data.content)
@@ -92,9 +95,9 @@ function UI() {
         .catch(error => console.error('Error:', error));
       }
       if (mediaId != undefined && mediaId != "Unsupported file type") {
-        payload = [{insert: {image: `http://localhost:8080/media/access/${mediaId}`}}]
+        payload = [{insert: {image: `${serverBaseURL}/media/access/${mediaId}`}}]
       }
-      fetch(`${serverBaseURL}/op/${id}`, {
+      fetch(`${serverBaseURL}/doc/op/${docid}/${id}`, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload)
@@ -137,11 +140,10 @@ function UI() {
 function submitPresence(range){
   if(!range) return;
   console.log(range);
-  fetch(`${serverBaseURL}/presence/${id}`, {
+  fetch(`${serverBaseURL}/doc/presence/${docid}/${id}`, {
     method: "POST",
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(range)
   });
 }
-
 export default UI;

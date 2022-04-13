@@ -24,8 +24,6 @@ export default function CreateDocument() {
                 console.log(name + " was submitted")
             }
         }
-        
-        // e.preventDefault()
     }
 
     const handleChange = (e) => {
