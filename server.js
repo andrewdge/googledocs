@@ -6,7 +6,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const DeltaConverter = require('quill-delta-to-html').QuillDeltaToHtmlConverter;
 // const http = require('http')
 const bodyParser = require('body-parser')
-const { v4: uuidv4 } = require('uuid');
+const uuid = require('uuid');
 const cors = require('cors');
 // const JSON5 = require('json5')
 const path = require('path')
@@ -17,6 +17,7 @@ const nodemailer = require('nodemailer')
 const dotenv = require('dotenv').config()
 const connection = require('./db.js')
 const { User, validate } = require('./users/user')
+const download = require('image-downloader')
 
 
 
@@ -26,8 +27,8 @@ const app = express()
 // const wss = new WebSocket.Server({ server: server })
 
 
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
+app.use(bodyParser.json({ limit: '50mb' }))
 app.use(cookieParser())
 app.use(session({
     secret: 'keyboard cat',
@@ -65,10 +66,6 @@ mongoose.Promise = global.Promise;
 //   console.log("successfully connected");
 // })
 const db = mongoose.connection
-
-
-
-
 ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
 
 // const share = new ShareDB();
@@ -117,18 +114,32 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', (req, res) => {
     
 })
+app.post("/media/upload", async (req, res) => {
+  var id = uuid.v4()
+  var uri = req.body[0].insert.image
+  var index = uri.lastIndexOf(".")
+  console.log(uri)
+  var mime = uri.substring(index + 1)
+  if (mime != "jpeg" && mime != "jpg" && mime != "png") res.send(JSON.stringify("Unsupported file type"))
+  var options = {url: uri, dest: path.join(__dirname, "images", `${id}.png`)}
+  download.image(options)
+  .then(({ filename }) => {
+    console.log('Saved to', filename)  // saved to /path/to/dest/photo.jpg
+  })
+  .catch((err) => console.error(err))
+  res.send(JSON.stringify(id))
+})
+app.get("/media/access/:mediaid", (req, res) => {
+  let id = req.params.mediaid
+  res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+  res.sendFile(`./images/${id}.png`, {root: __dirname})
+})
 
 
 app.post('/doc/op/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let ops = req.body // Array of arrays of OTs
-    console.log(`op from ${req.params.id}: `)
-    console.log(ops)
-    for (var i = 0; i < ops.length; i++) {
-        doc.submitOp(ops[i], { source: req.params.id })
-    }
-    console.log("Doc after ops")
-    console.log(doc.data.ops)
+    doc.submitOp(ops, { source: req.params.id })
     res.end()
 })
 
@@ -152,7 +163,7 @@ app.get('/doc/edit/:id', (req, res) => {
 
 app.get('/doc/connect/:id', async (req, res) => {
     num = 0
-    console.log("Connection: " + req.params.id)
+
     res.writeHead(200, {
         'X-Accel-Buffering': 'no',
         // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
@@ -166,7 +177,6 @@ app.get('/doc/connect/:id', async (req, res) => {
     let content = JSON.stringify({ content: oplist })
     //let content = JSON.stringify({content: oplist})
     presence.create(req.params.id);
-    console.log(presence);
     console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
     doc.on('op batch', (op, src) => {
@@ -191,19 +201,15 @@ app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 	let user = await User.findOne({ username: req.body.username, password: req.body.password, verified: true });
 	if (req.cookies.id === req.sessionID) {
-		console.log('Already logged in')
 		res.json({ status: "ERROR" });
 	}
 	else if (user) {
-		console.log('Found user: ' + req.body.username);
-		console.log('Session ID: ' + req.sessionID);
 		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 		res.cookie('id', req.sessionID);
         res.cookie('name', req.body.username);
         res.redirect('/home')
         // res.json({ status: "OK" });
 	} else {
-		console.log('Could not find user: ' + req.body.username)
 		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 		res.json({ status: "ERROR" });
 	}
@@ -211,9 +217,7 @@ app.post("/users/login", async (req, res) => {
 
 app.post("/users/logout", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    console.log('logged out')
 	if (req.cookies.id !== req.sessionID) {
-		console.log('Not logged in');
 		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 		res.json({ status: "ERROR" });
 	}
@@ -229,12 +233,9 @@ app.post("/users/logout", async (req, res) => {
 })
 
 app.post("/users/signup", async (req, res) => {
-    console.log(req.body)
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-
     let user = await User.findOne({ email: req.body.email });
     if (user) {
-        console.log('user already exists');
         return res.json({ status: "ERROR" });
     } else {
         // Insert the new user if they do not exist yet
@@ -245,8 +246,6 @@ app.post("/users/signup", async (req, res) => {
             verified: false
         });
         await user.save();
-        console.log(user);
-        console.log('sent to: ' + req.body.email);
         let mailOptions = {
             from: '"I like llamas" <testing356email@gmail.com>',
             to: req.body.email,
@@ -256,10 +255,8 @@ app.post("/users/signup", async (req, res) => {
         }
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
-                console.log(error);
                 res.json({ status: "OK" })
             }
-            console.log('Message sent: ' + info.response);
         });
         // res.json({ status: "OK" });
         res.redirect('/')
@@ -268,17 +265,14 @@ app.post("/users/signup", async (req, res) => {
 
 app.get("/users/verify", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    console.log(req.query);
     let user = await User.findOne({ email: req.query.email });
     if (user && req.query.key === "KEY") {
-        console.log(user);
         await User.updateOne({ email: req.query.email }, { verified: true });
         user = await User.findOne({ email: req.query.email });
         console.log('verified')
         res.redirect('/')
         // res.json({ status: "OK" })
     } else {
-        console.log('failed to verify');
         res.json({ status: "ERROR" });
     }
 })
