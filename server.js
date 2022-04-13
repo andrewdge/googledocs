@@ -17,6 +17,7 @@ const nodemailer = require('nodemailer')
 const dotenv = require('dotenv').config()
 const connection = require('./db.js')
 const { User, validate } = require('./models/user')
+const { Doc } = require('./models/doc')
 const download = require('image-downloader')
 const { v4 } = require('uuid');
 const MongoShareDB = require('sharedb-mongo');
@@ -29,7 +30,7 @@ const app = express()
 
 // For image/file limit
 app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
-app.use(bodyParser.json({ limit: '50mb' }))
+app.use(bodyParser.json())
 app.use(cookieParser())
 // Set up cookies
 app.use(session({
@@ -111,11 +112,15 @@ app.get('/home', (req, res) => {
 app.post('/collection/create', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let docid = v4();
-    console.log('creating doc with id: ' + docid) 
     let newDoc = connect.get('documents', docid);
-    newDoc.fetch(function(err){
+    newDoc.fetch(async function(err){
         if(err || newDoc.type !== null) return res.json({ status: "ERROR" });
         newDoc.create({title: req.body.name}, 'rich-text', () => { });
+        let nameDoc = new Doc({
+            id: docid,
+            name: req.body.name
+        });
+        await nameDoc.save();
         res.json({docid: newDoc.id});
     });
 })
@@ -140,19 +145,24 @@ app.post('/collection/delete', (req, res) => {
 })
 
 // Fetch recently used docs
-app.get('/collection/list', (req, res) => {
+app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
     let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
-    query.on('ready', () =>{
-        console.log(query.results.length)
-        let documents = query.results.map((element,index) => {
-            return {id: element.id, name: element.data.name}
-        });
+    query.on('ready', async () =>{
 
-        console.log(documents);
+        let documents = await Promise.all(query.results.map( async (element,index) => {
+          try {
+            let name = await Doc.findOne({id: element.id})
+            return {id: element.id, name: name.name}
+          }
+          catch(err) {
+            throw err
+          }
+        }))
+        // console.log(documents);
         json = JSON.stringify(documents);
-        console.log(typeof json)
+        // console.log(typeof json)
         console.log(json)
         return res.json(json);
     })
@@ -198,7 +208,7 @@ app.get('/doc/:id', (req, res) => {
     res.end()
 })
 
-app.get('/doc/edit/:id', (req, res) => {
+app.get('/doc/edit/:docid', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.cookies && req.cookies.id && req.cookies.name) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
