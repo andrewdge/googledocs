@@ -27,8 +27,8 @@ const app = express()
 // const wss = new WebSocket.Server({ server: server })
 
 
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
+app.use(bodyParser.json({ limit: '50mb' }))
 app.use(cookieParser())
 app.use(session({
     secret: 'keyboard cat',
@@ -115,6 +115,7 @@ app.post("/media/upload", async (req, res) => {
   var id = uuid.v4()
   var uri = req.body[0].insert.image
   var index = uri.lastIndexOf(".")
+  console.log(uri)
   var mime = uri.substring(index + 1)
   if (mime != "jpeg" && mime != "jpg" && mime != "png") res.send(JSON.stringify("Unsupported file type"))
   var options = {url: uri, dest: path.join(__dirname, "images", `${id}.png`)}
@@ -134,9 +135,7 @@ app.get("/media/access/:mediaid", (req, res) => {
 app.post('/op/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let ops = req.body // Array of arrays of OTs
-    for (var i = 0; i < ops.length; i++) {
-        doc.submitOp(ops[i], { source: req.params.id })
-    }
+    doc.submitOp(ops, { source: req.params.id })
     res.end()
 })
 app.get('/doc/:id', (req, res) => {

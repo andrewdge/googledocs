@@ -95,13 +95,11 @@ function UI() {
       if (mediaId != undefined && mediaId != "Unsupported file type") {
         payload = [{insert: {image: `http://localhost:8080/media/access/${mediaId}`}}]
       }
-      // fetch(`${serverBaseURL}/op/${id}`, {
-      //   method: "POST",
-      //   headers: {'Content-Type': 'application/json'},
-      //   body: JSON.stringify(payload)
-      // })
-      buffer.push(payload)
-      var interval = setInterval(submitBuffer, 1000)
+      fetch(`${serverBaseURL}/op/${id}`, {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      })
     });
     
     //When the user moves their cursor to a different location, send post request
@@ -130,24 +128,11 @@ function UI() {
 
 }, []);
 
-
-  return (
+ return (
     <div style={{ margin: '5%', border: '1px solid' }}>
       <div id='editor'></div>
     </div>
   );
-}
-function submitBuffer() {
-
-  if (buffer.length === 0) {
-    return;
-  }
-  fetch(`${serverBaseURL}/op/${id}`, {
-    method: "POST",
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(buffer)
-  }) // post updates
-  buffer = []
 }
 //Send an api request to presence/:id route, change to match apis in milestone 
 function submitPresence(range){
