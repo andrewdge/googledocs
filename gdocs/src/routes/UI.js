@@ -6,6 +6,7 @@ import Sharedb from 'sharedb/lib/client';
 import richText from 'rich-text';
 import { v4 as uuidv4 } from 'uuid';
 import ReconnectingWebSocket from 'reconnecting-websocket';
+import { useParams } from "react-router-dom";
 
 // Registering the rich text type to make sharedb work
 // with our quill editor
@@ -29,6 +30,7 @@ const doc = connection.get('documents', 'firstDocument');
 let id = uuidv4();
 
 function UI() {
+  let params = useParams();
 
   useEffect(() => {
     const cursorColors = {}
