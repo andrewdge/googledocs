@@ -114,7 +114,7 @@ app.post('/collection/create', (req, res) => {
     let docid = v4();
     let newDoc = connect.get('documents', docid);
     newDoc.fetch(async function(err){
-        if(err || newDoc.type !== null) return res.json({ status: "ERROR" });
+        if(err || newDoc.type !== null) return res.json({ error: true, message: "doc creation error" });
         newDoc.create([], 'rich-text', () => { });
         let nameDoc = new Doc({
             id: docid,
@@ -133,13 +133,20 @@ app.post('/collection/delete', (req, res) => {
     delDoc.fetch(function(err){
         if(err) {
             console.log(err);
-            return res.json({ status: "ERROR" });
+            return res.json({ error: true, message: 'doc deletion fetch error' });
         }
-        if(delDoc.type === null) return res.json({ status: "ERROR" });
+        if(delDoc.type === null) return res.json({ error: true, message: 'doc deletion null error' });
         delDoc.destroy(function(err){
-            if(err) console.log(err);
+            if(err) {
+                console.log(err);
+                res.json({ error: true, message: 'doc deletion destroy error' })
+            }
         })
-        delDoc.del()
+        delDoc.del(function(err){
+            if (err) {
+                res.json({ error: true, message: 'doc deletion error' })
+            }
+        })
         console.log(`Deleting document ${req.body.docid}`);
         res.end();
     });
@@ -170,20 +177,22 @@ app.get('/collection/list', async (req, res) => {
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
 app.post("/media/upload", async (req, res) => {
-  var id = uuid.v4()
-  var uri = req.body[0].insert.image
-  var index = uri.lastIndexOf(".")
-  console.log(uri)
-  var mime = uri.substring(index + 1)
-  if (mime != "jpeg" && mime != "jpg" && mime != "png") res.send(JSON.stringify("Unsupported file type"))
-  var options = {url: uri, dest: path.join(__dirname, "images", `${id}.png`)}
-  download.image(options)
-  .then(({ filename }) => {
-    console.log('Saved to', filename)  // saved to /path/to/dest/photo.jpg
-  })
-  .catch((err) => console.error(err))
-  res.send(JSON.stringify(id))
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    var id = uuid.v4()
+    var uri = req.body[0].insert.image
+    var index = uri.lastIndexOf(".")
+    console.log(uri)
+    var mime = uri.substring(index + 1)
+    if (mime != "jpeg" && mime != "jpg" && mime != "png") res.send(JSON.stringify("Unsupported file type"))
+    var options = {url: uri, dest: path.join(__dirname, "images", `${id}.png`)}
+    download.image(options)
+    .then(({ filename }) => {
+        console.log('Saved to', filename)  // saved to /path/to/dest/photo.jpg
+    })
+    .catch((err) => console.error(err))
+    res.send(JSON.stringify(id))
 })
+
 app.get("/media/access/:mediaid", (req, res) => {
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
@@ -220,7 +229,6 @@ app.get('/doc/edit/:docid', (req, res) => {
 // TODO: Has to also take in userID: /doc/connect/DOCID/UID
 app.get('/doc/connect/:id', async (req, res) => {
     num = 0
-
     res.writeHead(200, {
         'X-Accel-Buffering': 'no',
         // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
@@ -258,17 +266,15 @@ app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 	let user = await User.findOne({ username: req.body.username, password: req.body.password, verified: true });
 	if (req.cookies.id === req.sessionID) {
-		res.json({ status: "ERROR" });
+		res.json({ error: true, message: 'login mismatch sessionID and cookie id' });
 	}
 	else if (user) {
-		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 		res.cookie('id', req.sessionID);
         res.cookie('name', req.body.username);
         res.redirect('/home')
         // res.json({ status: "OK" });
 	} else {
-		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-		res.json({ status: "ERROR" });
+		res.json({ error: true, message: 'login error' });
 	}
 })
 
@@ -276,8 +282,7 @@ app.post("/users/login", async (req, res) => {
 app.post("/users/logout", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
 	if (req.cookies.id !== req.sessionID) {
-		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-		res.json({ status: "ERROR" });
+		res.json({ error: true, message: 'logout cookies session id error' });
 	}
 	else {
 		// res.cookie("id", "", { path: '/', expires: new Date() })
@@ -294,7 +299,7 @@ app.post("/users/signup", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     let user = await User.findOne({ email: req.body.email });
     if (user) {
-        return res.json({ status: "ERROR" });
+        return res.json({ error: true, message: 'signup user exist error' });
     } else {
         // Insert the new user if they do not exist yet
         user = new User({
@@ -313,7 +318,7 @@ app.post("/users/signup", async (req, res) => {
         }
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
-                res.json({ status: "OK" })
+                res.json({ error: true, message: 'mail send error' })
             }
         });
         // res.json({ status: "OK" });
@@ -332,7 +337,7 @@ app.get("/users/verify", async (req, res) => {
         res.redirect('/')
         // res.json({ status: "OK" })
     } else {
-        res.json({ status: "ERROR" });
+        res.json({ error: true, message: 'verify error' });
     }
 })
 
