@@ -1,32 +1,26 @@
 import { Outlet, Link } from "react-router-dom";
 import Login from "./components/login"
+import Logout from "./components/logout"
 import { useCookies } from 'react-cookie';
 
 export default function App() {
-  const [cookies, setCookie] = useCookies(['name'])
+  const [cookies, setCookie] = useCookies(['name', 'id'])
+  console.log(cookies);
 
-  function onChange(newName) {
-    setCookie('name', newName, { path: '/' });
-  } 
+  // function onChange(newName) {
+  //   setCookie('name', newName, { path: '/' });
+  // } 
   return (
-    // <div>
-    //   <h1>Bookkeeper</h1>
-    //   <nav
-    //     style={{
-    //       borderBottom: "solid 1px",
-    //       paddingBottom: "1rem",
-    //     }}
-    //   >
-    //     <Link to="/invoices">Invoices</Link> |{" "}
-    //     <Link to="/expenses">Expenses</Link>
-    //   </nav>
-    //   <Outlet />
-    // </div>
     <div>
       <div>
-        {cookies.name && <h1>Hello {cookies.name}!</h1>}
+        {cookies.name ? 
+        <>
+          <h1>Hello {cookies.name} with id {cookies.id}!</h1> 
+          <Logout />
+        </>
+        : 
+        <Login />}
       </div>
-      <Login />
       
     </div>
   );

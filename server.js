@@ -139,6 +139,7 @@ app.get('/connect/:id', async (req, res) => {
     let content = JSON.stringify({ content: oplist })
     //let content = JSON.stringify({content: oplist})
     presence.create(req.params.id);
+    console.log(presence);
     console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
     doc.on('op batch', (op, src) => {
