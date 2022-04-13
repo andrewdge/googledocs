@@ -82,20 +82,11 @@ wss.on('connection', (webSocket) => {
 })
 const connect = share.connect();
 
-/*
-To work with multiple documents, clicking on a document from the home page should open up a /doc/get/DOCID/UID for the current
-document.
-1. Client clicks on link, routes to the page from the link (UID and DOCID should be in the link)
-2. Get request for a specific doc ID
-3. Client side, the user gets presence for that doc and subscribes to it.
-*/
-
-// Retrieve first/only document
-let doc = connect.get('documents', 'firstDocument');
-
-// Presence for mouse pointers
-let presence = connect.getDocPresence(doc.collection, doc.id)
-presence.subscribe();
+// let doc = connect.get('documents', 'firstDocument'); // get the only document
+// //doc.preventCompose = true;
+// //console.log(doc)
+// let presence = connect.getDocPresence(doc.collection, doc.id)
+// presence.subscribe();
 
 // Set static path from which to send file
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
@@ -118,9 +109,9 @@ app.get('/home', (req, res) => {
 
 // Document creation 
 app.post('/collection/create', (req, res) => {
-    console.log('creating doc')
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    let docid = v4(); 
+    let docid = v4();
+    console.log('creating doc with id: ' + docid) 
     let newDoc = connect.get('documents', docid);
     newDoc.fetch(function(err){
         if(err || newDoc.type !== null) return res.json({ status: "ERROR" });
@@ -152,7 +143,7 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    let query = connect.createFetchQuery('documents', {$orderby: {"_m.mtime": -1}, $limit: 10});
+    let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
     query.on('ready', () =>{
         console.log(query.results.length)
         let documents = query.results.map((element,index) => {
@@ -160,7 +151,10 @@ app.get('/collection/list', (req, res) => {
         });
 
         console.log(documents);
-        return res.json(JSON.stringify(documents));
+        json = JSON.stringify(documents);
+        console.log(typeof json)
+        console.log(json)
+        return res.json(json);
     })
 })
 
@@ -276,9 +270,8 @@ app.post("/users/logout", async (req, res) => {
 		res.json({ status: "ERROR" });
 	}
 	else {
-		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-		// res.cookie("id", "")
-        // res.cookie("name", "")
+		// res.cookie("id", "", { path: '/', expires: new Date() })
+        // res.cookie("name", "", { path: '/', expires: new Date() })
         res.clearCookie("id")
         res.clearCookie("name")
         // res.json({ status: "OK" })
@@ -336,14 +329,14 @@ app.get("/users/verify", async (req, res) => {
 // Server start
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`)
-    doc.fetch(function (err) {
-        if (err) throw err;
-        if (doc.type === null) {
-            doc.create([], 'rich-text', () => { });
-            console.log('doc created')
-            // console.log(doc.data)
-            return;
-        }
-    })
+    // doc.fetch(function (err) {
+    //     if (err) throw err;
+    //     if (doc.type === null) {
+    //         doc.create([], 'rich-text', () => { });
+    //         console.log('doc created')
+    //         // console.log(doc.data)
+    //         return;
+    //     }
+    // })
 })
 

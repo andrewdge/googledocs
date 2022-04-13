@@ -15,12 +15,13 @@ export default function App() {
   return (
     <div>
       <div>
-        {cookies.name ? 
-          <Navigate to={{
+        {!cookies.name ? 
+          <Login />
+        : 
+        <Navigate to={{
             pathname: "/home"
           }}/>
-        : 
-        <Login />}
+        }
       </div>
       
     </div>

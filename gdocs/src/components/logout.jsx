@@ -13,7 +13,8 @@ export default function Logout() {
         let req = await fetch('/users/logout', {
             method: "POST",
             header: {
-                'Accept': '*/*'
+                'Accept': '*/*',
+                'credentials': 'include'
             }
         });
         if (req) {
