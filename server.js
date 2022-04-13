@@ -99,12 +99,20 @@ app.get('/', (req, res) => {
 
 app.get('/home', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+    if (req.cookies && req.cookies.id && req.cookies.name) {
+        res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+    } else {
+        res.redirect('/')
+    }
 })
 
-app.get('/edit', (req, res) => {
+app.get('/doc/edit/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+    if (req.cookies && req.cookies.id && req.cookies.name) {
+        res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+    } else {
+        res.redirect('/')
+    }
 })
 
 app.post('/op/:id', async (req, res) => {
@@ -197,7 +205,12 @@ app.post("/users/logout", async (req, res) => {
 	}
 	else {
 		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-		res.cookie('id', "").json({ status: "OK" })
+		// res.cookie("id", "")
+        // res.cookie("name", "")
+        res.clearCookie("id")
+        res.clearCookie("name")
+        // res.json({ status: "OK" })
+        res.redirect('/')
 	}
 })
 
@@ -234,7 +247,8 @@ app.post("/users/signup", async (req, res) => {
             }
             console.log('Message sent: ' + info.response);
         });
-        res.json({ status: "OK" });
+        // res.json({ status: "OK" });
+        res.redirect('/')
     }
 })
 
@@ -247,7 +261,7 @@ app.get("/users/verify", async (req, res) => {
         await User.updateOne({ email: req.query.email }, { verified: true });
         user = await User.findOne({ email: req.query.email });
         console.log('verified')
-        res.redirect('/home')
+        res.redirect('/')
         // res.json({ status: "OK" })
     } else {
         console.log('failed to verify');

@@ -22,8 +22,7 @@ ReactDOM.render(
       <BrowserRouter>
         <Routes>
           <Route path='/' element={<App />} >
-            <Route path="/home" element={<Home />} />
-            <Route path="/expenses" element={<Expenses />} />
+            <Route path="expenses" element={<Expenses />} />
             <Route path="invoices" element={<Invoices />} >
               <Route index
                 element={
@@ -35,7 +34,8 @@ ReactDOM.render(
               <Route path=":invoiceId" element={<Invoice />} />
             </Route>
           </Route>
-          <Route path="/edit" element={<UI />} />
+          <Route path="/doc/edit/:id" element={<UI />} />
+          <Route path="/home" element={<Home />} />
         </Routes>
       </BrowserRouter>
     </CookiesProvider>,
