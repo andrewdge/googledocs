@@ -82,20 +82,11 @@ wss.on('connection', (webSocket) => {
 })
 const connect = share.connect();
 
-<<<<<<< HEAD
 // let doc = connect.get('documents', 'firstDocument'); // get the only document
 // //doc.preventCompose = true;
 // //console.log(doc)
 // let presence = connect.getDocPresence(doc.collection, doc.id)
 // presence.subscribe();
-=======
-// Retrieve first/only document
-let doc = connect.get('documents', 'firstDocument');
-
-// Presence for mouse pointers
-let presence = connect.getDocPresence(doc.collection, doc.id)
-presence.subscribe();
->>>>>>> f702fa097d3c76ae1c93127d022bbf7289ff340f
 
 // Set static path from which to send file
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
