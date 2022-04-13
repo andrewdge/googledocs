@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useCookies } from 'react-cookie';
 import { useEffect, useState } from 'react'
+import DocItem from './docItem'
 
 export default function DocList() {
     // const [cookies, setCookie, removeCookie] = useCookies();
@@ -26,9 +27,11 @@ export default function DocList() {
     }, []) // ITS A WARNING BUT IT MUST STAY THIS WAY
 
     return (
-        <>
-            <div>Hi</div>
-            <ul>{docs.map((obj) => <li key={obj.id}>{obj.id}</li>)}</ul>
-        </>
+        <div style={{ border: "1px solid black", padding: 10 }}>
+            <div style={{ fontWeight: "bold", fontSize: 30 }}>10 Recently Edited Documents:</div>
+            <div style={{ display: "flex", flexDirection: "column"}}>
+                {docs.map((obj) => <DocItem key={obj.id} id={obj.id} /> )}
+            </div>
+        </div>
     );
 }

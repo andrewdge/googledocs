@@ -34,10 +34,10 @@ export default function CreateDocument() {
         <>
             <form onSubmit={handleSubmit}>
                 <label>
-                    Document Name:
+                    New Document Name:
                     <input type="text" value={name} onChange={handleChange} />
                 </label>
-                <input type="submit" value="Submit" />
+                <input type="submit" value="Add Document" />
             </form>
             
         </>
