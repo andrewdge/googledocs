@@ -20,6 +20,8 @@ export default function DocList() {
             })
             let data = await req.json();
             setDocs(JSON.parse(data));
+            console.log("printing docs")
+            console.log(docs)
             if (docs) console.log(docs)
         }
         fetchDocs()
@@ -28,7 +30,7 @@ export default function DocList() {
     return (
         <>
             <div>Hi</div>
-            <ul>{docs.map((obj) => <li key={obj.id}>{obj.id}</li>)}</ul>
+            <ul>{docs.map((obj) => <li key={obj.id}>{obj.name}</li>)}</ul>
         </>
     );
 }
