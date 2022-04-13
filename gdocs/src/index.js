@@ -34,7 +34,7 @@ ReactDOM.render(
               <Route path=":invoiceId" element={<Invoice />} />
             </Route>
           </Route>
-          <Route path="/doc/edit/:id" element={<UI />} />
+          <Route path="/doc/edit/:docid" element={<UI />} />
           <Route path="/home" element={<Home />} />
         </Routes>
       </BrowserRouter>

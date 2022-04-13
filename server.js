@@ -83,11 +83,16 @@ wss.on('connection', (webSocket) => {
 })
 const connect = share.connect();
 
-// let doc = connect.get('documents', 'firstDocument'); // get the only document
-// //doc.preventCompose = true;
-// //console.log(doc)
-// let presence = connect.getDocPresence(doc.collection, doc.id)
-// presence.subscribe();
+/*
+Presence subscribed to for each client on a single doc.
+1. Client enters doc via GET doc/connect/DOCID/UID route. Start connection
+2. Client asks for doc editor via GET doc/edit/DOCID route
+3. Client subscribes to the presence of the document
+4. On change for client-side, send on the OP route their UID and DOCID and delta the given document.
+5. doc/get/DOCID/UID returns html for given document.
+
+
+*/
 
 // Set static path from which to send file
 app.use(express.static(path.join(__dirname, '/gdocs/build')))
@@ -116,6 +121,7 @@ app.post('/collection/create', (req, res) => {
     newDoc.fetch(async function(err){
         if(err || newDoc.type !== null) return res.json({ status: "ERROR" });
         newDoc.create([], 'rich-text', () => { });
+        console.log(req.body.name)
         let nameDoc = new Doc({
             id: docid,
             name: req.body.name

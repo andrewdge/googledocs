@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 
 export default function DocList({key, id, name}) {
     // const [cookies, setCookie, removeCookie] = useCookies();
-    let navigate = useNavigate();
 
     const handleDelete = async (e) => {
         console.log('clicked delete')
