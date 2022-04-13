@@ -15,6 +15,7 @@
     "ejs": "^3.1.6",
     "express": "^4.17.3",
     "express-session": "^1.17.2",
+    "image-downloader": "^4.2.0",
     "joi": "^17.6.0",
     "json5": "^2.2.1",
     "mongoose": "^6.2.10",

@@ -35,11 +35,11 @@ function UI() {
     const sse = new EventSource(`${serverBaseURL}/connect/${id}`, { withCredentials: true }); // set up event source receiver
     console.log('uuid is: ' + id)
   
-    const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'] ];
+    const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'], ["image"] ];
         const options = {
           theme: 'snow',
           modules: {
-            //toolbar: toolbarOptions,
+            toolbar: toolbarOptions,
             cursors: true
           },
         };
@@ -77,14 +77,29 @@ function UI() {
     }
 
     quill.setContents(doc.data);
-    quill.on('text-change', function (delta, oldDelta, source) {
-      console.log("timely")
+    quill.on('text-change', async function (delta, oldDelta, source) {
       if (source !== "user") return;
       let payload = (delta.ops)
-      console.log(payload)
+      var mediaId = undefined
+      if (payload[0].insert && payload[0].insert.image) {
+        var mediaId = await fetch(`${serverBaseURL}/media/upload`, {
+          method: "POST",
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        }).then(res => res.json())
+        .then(response => mediaId = response)
+        .catch(error => console.error('Error:', error));
+      }
+      if (mediaId != undefined && mediaId != "Unsupported file type") {
+        payload = [{insert: {image: `http://localhost:8080/media/access/${mediaId}`}}]
+      }
+      // fetch(`${serverBaseURL}/op/${id}`, {
+      //   method: "POST",
+      //   headers: {'Content-Type': 'application/json'},
+      //   body: JSON.stringify(payload)
+      // })
       buffer.push(payload)
-      console.log("righteous")
-      var interval = setInterval(submitBuffer, 2000, buffer)
+      var interval = setInterval(submitBuffer, 1000)
     });
     
     //When the user moves their cursor to a different location, send post request
