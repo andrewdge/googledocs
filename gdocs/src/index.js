@@ -15,14 +15,14 @@ import Invoice from "./routes/invoice";
 import UI from "./routes/UI";
 import Home from "./routes/home";
 
+
 const rootElement = document.getElementById("root");
 ReactDOM.render(
     <CookiesProvider>
       <BrowserRouter>
         <Routes>
           <Route path='/' element={<App />} >
-            <Route index path="/home" element={<Home />} />
-            <Route path="/edit" element={<UI />} />
+            <Route path="/home" element={<Home />} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="invoices" element={<Invoices />} >
               <Route index
@@ -35,13 +35,7 @@ ReactDOM.render(
               <Route path=":invoiceId" element={<Invoice />} />
             </Route>
           </Route>
-          <Route path="*"
-            element={
-              <main style={{ padding: "1rem" }}>
-                <p>There's nothing here!</p>
-              </main>
-            }
-          />
+          <Route path="/edit" element={<UI />} />
         </Routes>
       </BrowserRouter>
     </CookiesProvider>,

@@ -102,6 +102,11 @@ app.get('/home', (req, res) => {
     res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
 })
 
+app.get('/edit', (req, res) => {
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+})
+
 app.post('/op/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let ops = req.body // Array of arrays of OTs
@@ -170,15 +175,7 @@ app.post("/users/login", async (req, res) => {
 	else if (user) {
 		console.log('Found user: ' + req.body.username);
 		console.log('Session ID: ' + req.sessionID);
-		if (req.cookies.games == undefined) {
-			req.session.games = []
-			req.session.score = { "human": 0, "wopr": 0, "tie": 0 }
-		}
 		res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-        let cookie = {
-            'id': req.sessionID,
-            'name': req.body.username
-        }
 		res.cookie('id', req.sessionID);
         res.cookie('name', req.body.username);
         res.redirect('/home')
