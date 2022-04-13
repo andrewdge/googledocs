@@ -150,7 +150,6 @@ app.get('/collection/list', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
     let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
     query.on('ready', async () =>{
-
         let documents = await Promise.all(query.results.map( async (element,index) => {
           try {
             let name = await Doc.findOne({id: element.id})

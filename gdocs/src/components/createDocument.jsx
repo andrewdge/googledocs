@@ -11,13 +11,14 @@ export default function CreateDocument() {
     const handleSubmit = async (e) => {
         console.log('clicked')
         if (name !== '') {
+          console.log(name)
             let req = await fetch('/collection/create', {
                 method: "POST",
-                header: {
+                headers: {
                     'Accept': '*/*',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ name: name })
+                body: JSON.stringify({name})
             })
             if (req) {
                 console.log(name + " was submitted")
@@ -35,7 +36,7 @@ export default function CreateDocument() {
             <form onSubmit={handleSubmit}>
                 <label>
                     Document Name:
-                    <input type="text" value={name} onChange={handleChange} />
+                    <input type="text" name="name" value={name} onChange={handleChange} />
                 </label>
                 <input type="submit" value="Submit" />
             </form>
