@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useCookies } from 'react-cookie';
 import { useEffect, useState } from 'react'
 
-export default function DocList({key, id}) {
+export default function DocList({key, id, name}) {
     // const [cookies, setCookie, removeCookie] = useCookies();
     let navigate = useNavigate();
 
@@ -18,7 +18,7 @@ export default function DocList({key, id}) {
             body: JSON.stringify({docid: id})
         });
         if (req) {
-            console.log(id + " was submitted")
+            console.log("doc: " + name + " with id: "+ id + " was submitted")
         }
     }
 
@@ -26,7 +26,7 @@ export default function DocList({key, id}) {
     return (
         <div style={{ display: "flex", flexDirection: "row", marginBottom: 10 }}>
             <div key={key} style={{ fontWeight: "semibold", fontSize: 20, marginRight: 100 }}>
-                {id}
+                {name}
             </div>
             <button onClick={handleDelete}>
                 Delete

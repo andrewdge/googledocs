@@ -115,7 +115,7 @@ app.post('/collection/create', (req, res) => {
     let newDoc = connect.get('documents', docid);
     newDoc.fetch(async function(err){
         if(err || newDoc.type !== null) return res.json({ status: "ERROR" });
-        newDoc.create({title: req.body.name}, 'rich-text', () => { });
+        newDoc.create([], 'rich-text', () => { });
         let nameDoc = new Doc({
             id: docid,
             name: req.body.name
@@ -139,6 +139,7 @@ app.post('/collection/delete', (req, res) => {
         delDoc.destroy(function(err){
             if(err) console.log(err);
         })
+        delDoc.del()
         console.log(`Deleting document ${req.body.docid}`);
         res.end();
     });
@@ -153,8 +154,8 @@ app.get('/collection/list', async (req, res) => {
 
         let documents = await Promise.all(query.results.map( async (element,index) => {
           try {
-            let name = await Doc.findOne({id: element.id})
-            return {id: element.id, name: name.name}
+            let doc = await Doc.findOne({id: element.id})
+            return {id: element.id, name: doc.name}
           }
           catch(err) {
             throw err

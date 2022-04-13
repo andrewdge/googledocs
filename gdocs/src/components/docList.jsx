@@ -29,18 +29,11 @@ export default function DocList() {
     }, []) // ITS A WARNING BUT IT MUST STAY THIS WAY
 
     return (
-<<<<<<< HEAD
         <div style={{ border: "1px solid black", padding: 10 }}>
             <div style={{ fontWeight: "bold", fontSize: 30 }}>10 Recently Edited Documents:</div>
             <div style={{ display: "flex", flexDirection: "column"}}>
-                {docs.map((obj) => <DocItem key={obj.id} id={obj.id} /> )}
+                {docs.map((obj) => <DocItem key={obj.id} id={obj.id} name={obj.name} /> )}
             </div>
         </div>
-=======
-        <>
-            <div>Hi</div>
-            <ul>{docs.map((obj) => <li key={obj.id}>{obj.name}</li>)}</ul>
-        </>
->>>>>>> 082dfbc8b84bcbae24eb72a3618dfc3ae3886e1d
     );
 }
