@@ -106,16 +106,20 @@ app.get('/home', (req, res) => {
     }
 })
 
-app.get('/doc/edit/:id', (req, res) => {
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.cookies && req.cookies.id && req.cookies.name) {
-        res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
-    } else {
-        res.redirect('/')
-    }
+app.post('/collection/create', (req, res) => {
+    console.log('creating doc')
 })
 
-app.post('/op/:id', async (req, res) => {
+app.post('/collection/delete', (req, res) => {
+
+})
+
+app.get('/collection/list', (req, res) => {
+    
+})
+
+
+app.post('/doc/op/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let ops = req.body // Array of arrays of OTs
     console.log(`op from ${req.params.id}: `)
@@ -127,6 +131,7 @@ app.post('/op/:id', async (req, res) => {
     console.log(doc.data.ops)
     res.end()
 })
+
 app.get('/doc/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var cfg = {}
@@ -136,7 +141,16 @@ app.get('/doc/:id', (req, res) => {
     res.end()
 })
 
-app.get('/connect/:id', async (req, res) => {
+app.get('/doc/edit/:id', (req, res) => {
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    if (req.cookies && req.cookies.id && req.cookies.name) {
+        res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+    } else {
+        res.redirect('/')
+    }
+})
+
+app.get('/doc/connect/:id', async (req, res) => {
     num = 0
     console.log("Connection: " + req.params.id)
     res.writeHead(200, {
@@ -164,7 +178,7 @@ app.get('/connect/:id', async (req, res) => {
 });
 
 //Presence id API
-app.post("/presence/:id", async (req, res) => {
+app.post("/doc/presence/:id", async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     //Use the corresponding local presence to submit the provided location (range) of cursor
     presence.localPresences[req.params.id].submit(req.body);

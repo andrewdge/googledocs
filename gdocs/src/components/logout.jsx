@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useCookies } from 'react-cookie';
 
 export default function Logout() {
@@ -15,10 +15,11 @@ export default function Logout() {
             header: {
                 'Accept': '*/*'
             }
-        })
-        if (req) console.log('received')
-        navigate("/")
-        
+        });
+        if (req) {
+            console.log('received');
+        }
+        navigate("/");
     }
 
     return (

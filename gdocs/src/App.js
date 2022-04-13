@@ -4,8 +4,9 @@ import Logout from "./components/logout"
 import { useCookies } from 'react-cookie';
 
 export default function App() {
-  const [cookies, setCookie] = useCookies(['name', 'id'])
+  const [cookies, setCookie] = useCookies(['name', 'id']);
   console.log(cookies);
+
 
   // function onChange(newName) {
   //   setCookie('name', newName, { path: '/' });
