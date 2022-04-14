@@ -340,7 +340,7 @@ app.post("/users/signup", async (req, res) => {
             if (error) {
                 console.log(error)
                 // TODO: RECOMMENT ONCE BACK ON SERVER, THIS BREAKS CLIENT
-                // res.json({ error: true, message: 'mail send error' })
+                res.json({ error: true, message: 'mail send error' })
             }
             else {
                 console.log(info)
