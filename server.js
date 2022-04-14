@@ -256,9 +256,9 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
 
     let content = JSON.stringify({ content: oplist })
     //let content = JSON.stringify({content: oplist})
-    // let presence = connect.getDocPresence(doc.collection, doc.id)
-    // presence.subscribe();
-    // presence.create(req.params.docid);
+    let presence = connect.getDocPresence(doc.collection, doc.id)
+    presence.subscribe();
+    presence.create(req.params.id);
     console.log(`first write: ${content}`)
     res.write("data: " + content + "\n\n")
     doc.on('op', (op, src) => {
@@ -274,8 +274,8 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     //Use the corresponding local presence to submit the provided location of cursor
     let doc = connect.get("documents", req.params.docid)
-    // let presence = connect.getDocPresence(doc.collection, doc.id)
-    // presence.localPresences[req.params.docid].submit(req.body);
+    let presence = connect.getDocPresence(doc.collection, doc.id)
+    presence.localPresences[req.params.id].submit(req.body);
     res.end();
 
 })
