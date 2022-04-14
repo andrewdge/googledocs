@@ -212,6 +212,7 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
     let doc = connect.get("documents", req.params.docid)
     let ops = req.body // Array of arrays of OTs
     doc.submitOp(ops, { source: req.params.id })
+    res.json({ status: "OK" });
     res.end()
 })
 

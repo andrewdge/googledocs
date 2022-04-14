@@ -33,6 +33,7 @@ let id = uuidv4();
 
 function UI() {
   const params = useParams()
+  let num = 0
   docid = params.docid
   doc = connection.get('documents', docid);
   useEffect(() => {
@@ -97,6 +98,7 @@ function UI() {
       if (mediaId != undefined && mediaId != "Unsupported file type") {
         payload = [{insert: {image: `${serverBaseURL}/media/access/${mediaId}`}}]
       }
+      num++
       fetch(`${serverBaseURL}/doc/op/${docid}/${id}`, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
@@ -127,7 +129,6 @@ function UI() {
       cursors.createCursor(id, id ,cursorColors[id]);
       cursors.moveCursor(id, cursor);
     })
-
 }, []);
 
  return (
