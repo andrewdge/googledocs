@@ -6,7 +6,7 @@ import Sharedb from 'sharedb/lib/client';
 import richText from 'rich-text';
 import { v4 as uuidv4 } from 'uuid';
 import ReconnectingWebSocket from 'reconnecting-websocket';
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 // Registering the rich text type to make sharedb work
 // with our quill editor
@@ -132,9 +132,12 @@ function UI() {
 }, []);
 
  return (
-    <div style={{ margin: '5%', border: '1px solid' }}>
-      <div id='editor'></div>
-    </div>
+    <>
+      <Link to="/home">Home</Link>
+      <div style={{ margin: '5%', border: '1px solid' }}>
+        <div id='editor'></div>
+      </div>
+    </>
   );
 }
 //Send an api request to presence/:id route, change to match apis in milestone 
