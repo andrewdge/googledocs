@@ -117,17 +117,18 @@ function UI() {
 
     //When an update of another user's presence has been received, 
     //Generate cursor 
-    presence.on('receive', function(id,cursor){
+    presence.on('receive', function(cursorid,cursor){
       //If the update is from a new user, create a new cursor color
-      if(cursorColors[id] === undefined) {
+      if(id == cursorid) return
+      if(cursorColors[cursorid] === undefined) {
         let color = "#" +   Math.floor(Math.random()*0xFFFFFF).toString(16);
         console.log(color);
-        cursorColors[id] = color
+        cursorColors[cursorid] = color
       } 
       //Create and move cursor to correct location
       // Replace 2nd id with account name
-      cursors.createCursor(id, id ,cursorColors[id]);
-      cursors.moveCursor(id, cursor);
+      cursors.createCursor(cursorid, cursorid ,cursorColors[cursorid]);
+      cursors.moveCursor(cursorid, cursor);
     })
 }, []);
 
