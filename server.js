@@ -50,17 +50,15 @@ app.use(cors({
 // app.set('view engine', 'ejs')
 
 
-// TODO: Nodemailer with Postfix
+// Nodemailer with Postfix
 let transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    service: 'gmail',
-    port: 587,
+    service: 'postfix',
+    host: 'localhost',
     secure: false,
-    auth: {
-        user: process.env.MAIL_USERNAME,
-        pass: process.env.MAIL_PASSWORD,
-    }
-})
+    port: 25,
+    auth: { user: 'root@googledocs-m2', pass: '' },
+    tls: { rejectUnauthorized: false }
+  });
 
 // Mongoose setup
 mongoose.Promise = global.Promise;
@@ -330,7 +328,7 @@ app.post("/users/signup", async (req, res) => {
         });
         await user.save();
         let mailOptions = {
-            from: '"I like llamas" <testing356email@gmail.com>',
+            from: 'root@googledocs-m2',
             to: req.body.email,
             subject: 'Verification Password',
             text: `209.151.153.183:8080/users/verify?email=${req.body.email}&key=KEY`,
@@ -339,6 +337,9 @@ app.post("/users/signup", async (req, res) => {
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
                 res.json({ error: true, message: 'mail send error' })
+            }
+            else {
+                console.log(info)
             }
         });
         // res.json({ status: "OK" });
