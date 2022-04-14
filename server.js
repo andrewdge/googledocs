@@ -265,6 +265,12 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
         console.log(`subsequent write: ${content}`)
         res.write("data: " + content + "\n\n")
     });
+
+    share.use('sendPresence', function(context,next){
+        let content = JSON.stringify({presence: {id: context.presence.id, cursor: context.presence.p}/*, doc: context.presence.d */});
+        res.write("data: " + content + "\n\n" );
+        next()
+    }) 
 });
 
 // Presence id API

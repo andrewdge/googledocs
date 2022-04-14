@@ -59,6 +59,17 @@ function UI() {
       console.log("received")
       let data = JSON.parse(e.data) 
       let text;
+
+      //COMMENT OUT IF WE WANT TO SET CURSORS IN presence.on INSTEAD
+      /*
+      if (data.presence) {
+          if (data.doc !== docid || data.presence.id === id) return;
+          
+          let cursorid = data.presence.id;
+          let cursor = data.presence.cursor;
+          setCursors(cursorid, cursor);
+          return 
+      }*/
       if (data.content) console.log(data.content)
       if (data.content === undefined) {
         text = data;
@@ -76,7 +87,7 @@ function UI() {
       sse.close();
     }
 
-    window.disconnect = function () {
+    window.onbeforeunload = function () {
       console.log("CLOSING connection")
       sse.close();
     }
@@ -115,19 +126,25 @@ function UI() {
 
     //When an update of another user's presence has been received, 
     //Generate cursor 
-    presence.on('receive', function(cursorid,cursor){
+    presence.on('receive', setCursors); 
+
+    function setCursors(cursorid,cursor){
       //If the update is from a new user, create a new cursor color
       if(id === cursorid) return
+      if(cursor === null) {
+        cursors.removeCursor(cursorid);
+        return;
+      }
       if(cursorColors[cursorid] === undefined) {
         let color = "#" +   Math.floor(Math.random()*0xFFFFFF).toString(16);
         console.log(color);
         cursorColors[cursorid] = color
+        cursors.createCursor(cursorid, cursorid ,cursorColors[cursorid]);
       } 
       //Create and move cursor to correct location
       // Replace 2nd id with account name
-      cursors.createCursor(cursorid, cursorid ,cursorColors[cursorid]);
       cursors.moveCursor(cursorid, cursor);
-    })
+    }
 
 }, []);
 
