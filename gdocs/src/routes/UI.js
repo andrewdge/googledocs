@@ -86,7 +86,7 @@ function UI() {
       let payload = (delta.ops)
       var mediaId = undefined
       if (payload[0].insert && payload[0].insert.image) {
-        var mediaId = await fetch(`${serverBaseURL}/media/upload`, {
+          mediaId = await fetch(`${serverBaseURL}/media/upload`, {
           method: "POST",
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(payload)
@@ -94,7 +94,7 @@ function UI() {
         .then(response => mediaId = response)
         .catch(error => console.error('Error:', error));
       }
-      if (mediaId != undefined && mediaId != "Unsupported file type") {
+      if (mediaId !== undefined && mediaId !== "Unsupported file type") {
         payload = [{insert: {image: `${serverBaseURL}/media/access/${mediaId}`}}]
       }
       fetch(`${serverBaseURL}/doc/op/${docid}/${id}`, {
@@ -117,7 +117,7 @@ function UI() {
     //Generate cursor 
     presence.on('receive', function(cursorid,cursor){
       //If the update is from a new user, create a new cursor color
-      if(id == cursorid) return
+      if(id === cursorid) return
       if(cursorColors[cursorid] === undefined) {
         let color = "#" +   Math.floor(Math.random()*0xFFFFFF).toString(16);
         console.log(color);
