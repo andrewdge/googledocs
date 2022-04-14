@@ -27,6 +27,7 @@ let buffer = []
 // Querying for our document
 var docid
 var doc
+var version = undefined
 
 
 let id = uuidv4();
@@ -38,7 +39,6 @@ function UI() {
   doc = connection.get('documents', docid);
   useEffect(() => {
     // Fetch for doc data should be here
-    console.log("ussing na effect!!!")
     const cursorColors = {}
     const sse = new EventSource(`${serverBaseURL}/doc/connect/${docid}/${id}`, { withCredentials: true }); // set up event source receiver
     const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'], ["image"] ];
@@ -57,10 +57,13 @@ function UI() {
     
     // ISSUE: server sending to 8080 i think, we on port 3000
     sse.onmessage = (e) => {
-      console.log("received")
+      console.log(e.data)
       let data = JSON.parse(e.data) 
       let text;
+      if (data.ack) version++
+      console.log(version)
       if (data.content) console.log(data.content)
+      if (data.version && version == undefined) version = data.version
       if (data.content === undefined) {
         text = data;
       }
@@ -86,6 +89,7 @@ function UI() {
       if (source !== "user") return;
       let payload = (delta.ops)
       var mediaId = undefined
+      
       if (payload[0].insert && payload[0].insert.image) {
           mediaId = await fetch(`${serverBaseURL}/media/upload`, {
           method: "POST",
@@ -98,12 +102,23 @@ function UI() {
       if (mediaId !== undefined && mediaId !== "Unsupported file type") {
         payload = [{insert: {image: `${serverBaseURL}/media/access/${mediaId}`}}]
       }
-      num++
-      fetch(`${serverBaseURL}/doc/op/${docid}/${id}`, {
-        method: "POST",
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-      })
+      let status = "retry"
+      while (true) {
+        let res = await fetch(`${serverBaseURL}/doc/op/${docid}/${id}`, {
+          method: "POST",
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({payload: payload, version: version})
+        })
+        let json = await res.json()
+        if (json && (json.status == "ok" || json.status == "retry")) {
+          status = json.status
+          console.log(`"status: ${status}`)
+        }
+        if (status != "retry") {
+          break
+        }
+      }
+      
     });
     
     //When the user moves their cursor to a different location, send post request

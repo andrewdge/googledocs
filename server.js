@@ -208,10 +208,25 @@ app.get("/media/access/:mediaid", (req, res) => {
 app.post('/doc/op/:docid/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let doc = connect.get("documents", req.params.docid)
-    let ops = req.body // Array of arrays of OTs
-    doc.submitOp(ops, { source: req.params.id })
-    res.json({ status: "OK" });
-    res.end()
+    let ops = req.body.payload // Array of arrays of OTs
+    
+    let clientVersion = req.body.version
+    console.log(`client: ${clientVersion}`)
+    console.log(`doc: ${doc.version}`)
+    if (clientVersion < doc.version) {
+      console.log(clientVersion)
+      console.log(doc.version)
+      res.json({status: "retry"})
+      console.log("retry")
+      res.end()
+      return
+    }
+    doc.submitOp(ops, { source: req.params.id }, function() {
+      res.json({status: "ok"})
+      res.end()
+      return
+    })
+    
 })
 
 // Not required?
@@ -248,24 +263,33 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     }) // set up http stream
     res.flushHeaders(); // send headers
     let doc = connect.get("documents", req.params.docid)// get ops
-    console.log(doc)
-    console.log(doc.data)
-    let oplist = doc.data.ops
+    let oplist = ""
+    if (doc.data)
+      oplist = doc.data.ops
 
 
-    let content = JSON.stringify({ content: oplist })
+    let content = JSON.stringify({ content: oplist, version: doc.version })
     //let content = JSON.stringify({content: oplist})
     let presence = connect.getDocPresence(doc.collection, doc.id)
     presence.subscribe();
     presence.create(req.params.id);
     console.log(`first write: ${content}`)
-    res.write("data: " + content + "\n\n")
+    res.write("data: " + content  + "\n\n")
     doc.on('op', (op, src) => {
-        if (src == req.params.id) return
+        if (src == req.params.id) {
+          return
+        }
         let content = JSON.stringify({ content: op })
         console.log(`subsequent write: ${content}`)
         res.write("data: " + content + "\n\n")
     });
+    doc.on("before op", (op, src) => {
+      if (src == req.params.id) {
+        content = JSON.stringify({ack: op})
+        res.write("data: " + content + "\n\n")
+        return
+      }
+    })
 });
 
 // Presence id API
