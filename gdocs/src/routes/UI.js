@@ -6,7 +6,7 @@ import Sharedb from 'sharedb/lib/client';
 import richText from 'rich-text';
 import { v4 as uuidv4 } from 'uuid';
 import ReconnectingWebSocket from 'reconnecting-websocket';
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 // Registering the rich text type to make sharedb work
 // with our quill editor
@@ -62,6 +62,17 @@ function UI() {
       let text;
       if (data.ack) version++
       console.log(version)
+
+      //COMMENT OUT IF WE WANT TO SET CURSORS IN presence.on INSTEAD
+      /*
+      if (data.presence) {
+          if (data.doc !== docid || data.presence.id === id) return;
+          
+          let cursorid = data.presence.id;
+          let cursor = data.presence.cursor;
+          setCursors(cursorid, cursor);
+          return 
+      }*/
       if (data.content) console.log(data.content)
       if (data.version && version == undefined) version = data.version
       if (data.content === undefined) {
@@ -80,7 +91,7 @@ function UI() {
       sse.close();
     }
 
-    window.disconnect = function () {
+    window.onbeforeunload = function () {
       console.log("CLOSING connection")
       sse.close();
     }
@@ -132,25 +143,35 @@ function UI() {
 
     //When an update of another user's presence has been received, 
     //Generate cursor 
-    presence.on('receive', function(cursorid,cursor){
+    presence.on('receive', setCursors); 
+
+    function setCursors(cursorid,cursor){
       //If the update is from a new user, create a new cursor color
       if(id === cursorid) return
+      if(cursor === null) {
+        cursors.removeCursor(cursorid);
+        return;
+      }
       if(cursorColors[cursorid] === undefined) {
         let color = "#" +   Math.floor(Math.random()*0xFFFFFF).toString(16);
         console.log(color);
         cursorColors[cursorid] = color
+        cursors.createCursor(cursorid, cursorid ,cursorColors[cursorid]);
       } 
       //Create and move cursor to correct location
       // Replace 2nd id with account name
-      cursors.createCursor(cursorid, cursorid ,cursorColors[cursorid]);
       cursors.moveCursor(cursorid, cursor);
-    })
+    }
+
 }, []);
 
  return (
-    <div style={{ margin: '5%', border: '1px solid' }}>
-      <div id='editor'></div>
-    </div>
+    <>
+      <Link to="/home">Home</Link>
+      <div style={{ margin: '5%', border: '1px solid' }}>
+        <div id='editor'></div>
+      </div>
+    </>
   );
 }
 //Send an api request to presence/:id route, change to match apis in milestone 

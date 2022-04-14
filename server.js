@@ -290,6 +290,12 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
         return
       }
     })
+
+    share.use('sendPresence', function(context,next){
+        let content = JSON.stringify({presence: {id: context.presence.id, cursor: context.presence.p}/*, doc: context.presence.d */});
+        res.write("data: " + content + "\n\n" );
+        next()
+    }) 
 });
 
 // Presence id API
@@ -316,7 +322,7 @@ app.post("/users/login", async (req, res) => {
         res.redirect('/home')
         // res.json({ status: "OK" });
 	} else {
-		res.json({ error: true, message: 'login error' });
+		res.json({ error: true, message: 'login incorrect password error' });
 	}
 })
 
@@ -344,22 +350,27 @@ app.post("/users/signup", async (req, res) => {
         return res.json({ error: true, message: 'signup user exist error' });
     } else {
         // Insert the new user if they do not exist yet
+        let key = v4();
         user = new User({
             username: req.body.username,
             email: req.body.email,
             password: req.body.password,
-            verified: false
+            verified: false,
+            vpassword: key
         });
+        
         await user.save();
         let mailOptions = {
             from: 'root@googledocs-m2',
             to: req.body.email,
             subject: 'Verification Password',
-            text: `209.151.153.183:8080/users/verify?email=${req.body.email}&key=KEY`,
-            html: `<div>209.151.153.183:8080/users/verify?email=${req.body.email}&key=KEY</div>`
+            text: `209.151.153.183:8080/users/verify?email=${req.body.email}&key=${key}`,
+            html: `<div>209.151.153.183:8080/users/verify?email=${req.body.email}&key=${key}</div>`
         }
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
+                console.log(error)
+                // TODO: RECOMMENT ONCE BACK ON SERVER, THIS BREAKS CLIENT
                 res.json({ error: true, message: 'mail send error' })
             }
             else {
@@ -375,7 +386,7 @@ app.post("/users/signup", async (req, res) => {
 app.get("/users/verify", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     let user = await User.findOne({ email: req.query.email });
-    if (user && req.query.key === "KEY") {
+    if (user && req.query.key === "KEY" || user && req.query.key === user.vpassword) {
         await User.updateOne({ email: req.query.email }, { verified: true });
         user = await User.findOne({ email: req.query.email });
         console.log('verified')

@@ -18,6 +18,10 @@ const User = mongoose.model('User', new mongoose.Schema({
     verified: {
         type: Boolean,
         required: true,
+    },
+    vpassword: {
+        type: String,
+        required: true,
     }
 }));
 
@@ -25,7 +29,8 @@ function validateUser(user) {
     const schema = Joi.object({
         username: Joi.string().required(),
         email: Joi.string().required().email(),
-        password: Joi.string().required()
+        password: Joi.string().required(),
+        vpassword: Joi.string().required()
     });
     return schema.validate(user);
 }
