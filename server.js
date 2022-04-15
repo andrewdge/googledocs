@@ -270,56 +270,51 @@ app.get('/doc/edit/:docid', (req, res) => {
 // TODO: Has to also take in userID: /doc/connect/DOCID/UID
 app.get('/doc/connect/:docid/:id', async (req, res) => {
     console.log("connectaffffffffffffffffffffasdfsaaADFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-    if (!req.cookies.cookie){
-        res.redirect('/')
-    } else {
-        num = 0
-        res.writeHead(200, {
-            'X-Accel-Buffering': 'no',
-            // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
-        }) // set up http stream
-        res.flushHeaders(); // send headers
-        let doc = connect.get("documents", req.params.docid)// get ops
-        let oplist = ""
-        if (doc.data)
+    num = 0
+    res.writeHead(200, {
+        'X-Accel-Buffering': 'no',
+        // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
+    }) // set up http stream
+    res.flushHeaders(); // send headers
+    let doc = connect.get("documents", req.params.docid)// get ops
+    let oplist = ""
+    if (doc.data) {
         oplist = doc.data.ops
-
-
-        let content = JSON.stringify({ content: oplist, version: doc.version })
-        //let content = JSON.stringify({content: oplist})
-        let presence = connect.getDocPresence(doc.collection, doc.id)
-        presence.subscribe();
-        presence.create(req.params.id);
-        console.log(`first write: ${content}`)
-        res.write("data: " + content  + "\n\n")
-        doc.on('op', (op, src) => {
-            if (src == req.params.id) {
+    }
+    let content = JSON.stringify({ content: oplist, version: doc.version })
+    //let content = JSON.stringify({content: oplist})
+    let presence = connect.getDocPresence(doc.collection, doc.id)
+    presence.subscribe();
+    presence.create(req.params.id);
+    console.log(`first write: ${content}`)
+    res.write("data: " + content  + "\n\n")
+    doc.on('op', (op, src) => {
+        if (src == req.params.id) {
             return
-            }
-            let content = JSON.stringify({ content: op })
-            console.log(`subsequent write: ${content}`)
-            res.write("data: " + content + "\n\n")
-        });
-        doc.on("before op", (op, src) => {
+        }
+        let content = JSON.stringify({ content: op })
+        console.log(`subsequent write: ${content}`)
+        res.write("data: " + content + "\n\n")
+    });
+    doc.on("before op", (op, src) => {
         if (src == req.params.id) {
             content = JSON.stringify({ack: op})
             res.write("data: " + content + "\n\n")
             return
         }
-        })
-        
-        share.use('sendPresence', function(context,next){
-            if (context.presence.d !== req.params.docid) return;
-            let presenceObj = {...context.presence.p, name: JSON.parse(req.cookies.cookie).name};
-            let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
-            res.write("data: " + content + "\n\n" );
-            next()
-        }) 
-    }
+    })
+    
+    share.use('sendPresence', function(context,next){
+        if (context.presence.d !== req.params.docid) return;
+        let presenceObj = {...context.presence.p, name: JSON.parse(req.cookies.cookie).name};
+        let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
+        res.write("data: " + content + "\n\n" );
+        next()
+    }) 
 });
 
 // Presence id API
@@ -339,7 +334,6 @@ app.post("/users/login", async (req, res) => {
     console.log('login with email: ' + req.body.email)
     // console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
-    if (user) console.log(user.verified)
 	if (user && user.verified === false) {
         res.json({ error: true, message: 'login user not verified'});
     } else if (user && user.password !== req.body.password) {
