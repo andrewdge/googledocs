@@ -27,10 +27,6 @@ export default function Login() {
             </div>
             <form action="/users/login" method="post">
                 <section>
-                    <label for="username">Username</label>
-                    <input id="username" name="username" type="text" required />
-                </section>
-                <section>
                     <label for="email">Email</label>
                     <input id="email" name="email" type="text" required />
                 </section>

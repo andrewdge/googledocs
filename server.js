@@ -317,15 +317,17 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
 // Login route
 app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-	let user = await User.findOne({ username: req.body.username, password: req.body.password, verified: true });
+    console.log(req.body)
+	let user = await User.findOne({ username: req.body.email, password: req.body.password, verified: true });
+    console.log(User.find());
+    if (user) console.log(user)
 	if (req.cookies.id === req.sessionID) {
 		res.json({ error: true, message: 'login mismatch sessionID and cookie id' });
 	}
 	else if (user) {
 		res.cookie('id', req.sessionID);
         res.cookie('name', req.body.username);
-        res.redirect('/home')
-        // res.json({ status: "OK" });
+        res.json({ name: user.name });
 	} else {
 		res.json({ error: true, message: 'login incorrect password error' });
 	}
@@ -343,7 +345,7 @@ app.post("/users/logout", async (req, res) => {
         res.clearCookie("id")
         res.clearCookie("name")
         // res.json({ status: "OK" })
-        res.redirect('/')
+        res.json({})
 	}
 })
 
@@ -383,7 +385,7 @@ app.post("/users/signup", async (req, res) => {
             }
         });
         // res.json({ status: "OK" });
-        res.redirect('/')
+        res.json({})
     }
 })
 
