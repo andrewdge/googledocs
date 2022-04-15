@@ -32,7 +32,7 @@ const app = express()
 // app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
 // app.use(bodyParser.json())
 
-const allowedOrigins = ["http://localhost:8080", "http://teos-llamas.cse356.compas.cs.stonybrook.edu/"];
+const allowedOrigins = ["http://localhost:8080", "http://teos-llamas.cse356.compas.cs.stonybrook.edu/", "209.151.153.183"];
     const corsOptions = {
         origin: function (origin, callback) {
         if (allowedOrigins.indexOf(origin) !== -1) {
