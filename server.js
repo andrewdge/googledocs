@@ -32,14 +32,14 @@ const app = express()
 // app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
 // app.use(bodyParser.json())
 
-const allowedOrigins = ["http://localhost:8080", "http://teos-llamas.cse356.compas.cs.stonybrook.edu/", "209.151.153.183"];
-    const corsOptions = {
-        origin: function (origin, callback) {
+const allowedOrigins = ["http://teos-llamas.cse356.compas.cs.stonybrook.edu/", "http://localhost:8080", "209.151.153.183"];
+const corsOptions = {
+    origin: function (origin, callback) {
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             var msg =
-            "The CORS policy for this site does not " +
+            "The CORS policy for this site " + origin + " does not " +
             "allow access from the specified Origin.";
             callback(new Error(msg), false);
         }
