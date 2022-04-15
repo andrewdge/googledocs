@@ -60,7 +60,7 @@ let transporter = nodemailer.createTransport({
     service: 'postfix',
     host: 'localhost',
     secure: false,
-    port: 26,
+    port: 25,
     auth: { user: 'root@googledocs-m2', pass: '' },
     tls: { rejectUnauthorized: false },
     name: 'root@googledocs-m2'
