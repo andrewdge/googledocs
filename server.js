@@ -56,7 +56,7 @@ app.use(cookieParser())
 // Set up cookies
 app.use(session({
     secret: 'keyboard cat',
-    resave: true,
+    resave: false,
     saveUninitialized: true
 }));
 
@@ -126,7 +126,7 @@ app.get('/', (req, res) => {
 // Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.cookies.cookie) {
+    if (req.cookies.id) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -183,7 +183,7 @@ app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
     console.log(req.cookies)
-    if (req.cookies.cookie) {
+    if (req.cookies.id) {
         let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
         query.on('ready', async () =>{
             let documents = await Promise.all(query.results.map( async (element,index) => {
@@ -228,7 +228,7 @@ app.post("/media/upload", async (req, res) => {
 app.get("/media/access/:mediaid", (req, res) => {
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-  if (!req.cookies.cookie) {
+  if (!req.cookies.id) {
       res.redirect('/')
   } else {
     res.sendFile(`./images/${id}.png`, {root: __dirname})
@@ -263,7 +263,7 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
 // Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (!req.cookies.cookie) {
+    if (!req.cookies.id) {
         res.redirect('/')
     } else {
         var doc = connect.get('documents', req.params.docid);
@@ -277,7 +277,7 @@ app.get('/doc/get/:docid/:id', (req, res) => {
 
 app.get('/doc/edit/:docid', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.cookies.cookie) {
+    if (req.cookies.id) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -327,7 +327,7 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     
     share.use('sendPresence', function(context,next){
         if (context.presence.d !== req.params.docid) return;
-        let presenceObj = {...context.presence.p, name: JSON.parse(req.cookies.cookie).name};
+        let presenceObj = {...context.presence.p, name: req.cookies.name};
         let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
         res.write("data: " + content + "\n\n" );
         next()
@@ -340,7 +340,7 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
     //Use the corresponding local presence to submit the provided location of cursor
     let doc = connect.get("documents", req.params.docid)
     let presence = connect.getDocPresence(doc.collection, doc.id)
-    let cursor = {...req.body, name: JSON.parse(req.cookies.cookie).name};
+    let cursor = {...req.body, name: req.cookies.name};
     presence.localPresences[req.params.id].submit(cursor);
     res.end();
 
@@ -358,14 +358,22 @@ app.post("/users/login", async (req, res) => {
     } else if (user && user.password !== req.body.password) {
         res.json({ error: true, message: 'login incorrect password'});
     } else if (user) {
+        console.log('logged in')
 		// res.cookie('id', req.sessionID);
         // res.cookie('name', user.name);
         // res.setHeader('Set-Cookie', `id=${req.sessionID};name=${user.name}`);
-        let cookie = JSON.stringify({
-            'id': req.sessionID,
-            'name': user.name
-        })
-        res.cookie('cookie', cookie).status(200).json({ name: user.name });
+        // let cookie = JSON.stringify({
+        //     'id': req.sessionID,
+        //     'name': user.name
+        // })
+        // res.cookie('cookie', cookie).status(200).json({ name: user.name });
+        // res.setHeader('Set-Cookie', [
+        //     `id=${req.sessionID}; path=/`,
+        //     `name=${user.name}; path=/`
+        // ])
+        res.cookie('id', req.sessionID)
+        res.cookie('name', user.name)
+        res.json({ name: user.name })
 	} else {
         console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
 		res.json({ error: true, message: 'login error prob no user found' });
@@ -375,16 +383,15 @@ app.post("/users/login", async (req, res) => {
 // Logout route
 app.post("/users/logout", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-	if (req.cookies.cookie && JSON.parse(req.cookies.cookie).id !== req.sessionID) {
+	if (req.cookies && req.cookies.id !== req.sessionID) {
 		res.json({ error: true, message: 'logout cookies session id error' });
 	}
 	else {
-        console.log('logging out user: ' + JSON.parse(req.cookies.cookie).id)
+        console.log('logging out user: ' + req.cookies.id)
 		// res.cookie("id", "", { path: '/', expires: new Date() })
         // res.cookie("name", "", { path: '/', expires: new Date() })
-        // res.clearCookie("id")
-        // res.clearCookie("name")
-        res.clearCookie('cookie')
+        res.clearCookie("id")
+        res.clearCookie("name")
         // res.json({ status: "OK" })
         res.json({})
 	}
