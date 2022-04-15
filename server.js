@@ -382,8 +382,8 @@ app.post("/users/signup", async (req, res) => {
             from: 'root@googledocs-m2',
             to: req.body.email,
             subject: 'Verification Password',
-            text: `http://209.151.153.183:8080/users/verify?email=${encodeURIComponent(req.body.email)}&key=${key}`,
-            html: `<div>http://209.151.153.183:8080/users/verify?email=${encodeURIComponent(req.body.email)}&key=${key}</div>`
+            text: `http://http://teos-llamas.cse356.compas.cs.stonybrook.edu//users/verify?email=${req.body.email}&key=${key}`,
+            html: `<div>http://http://teos-llamas.cse356.compas.cs.stonybrook.edu/users/verify?email=${req.body.email}&key=${key}</div>`
         }
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
@@ -427,5 +427,13 @@ app.listen(PORT, () => {
     //         return;
     //     }
     // })
+    
 })
+
+process.on('SIGINT', function() {
+    console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
+    // some other closing procedures go here
+    wss.close();
+    process.exit(0);
+  });
 
