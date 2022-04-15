@@ -67,7 +67,7 @@ function UI() {
       
       if (data.presence) {
           console.log("PRESENCE DETECTED")
-          if (data.doc !== docid) return;
+          //if (data.doc !== docid) return;
           let cursorid = data.presence.id;
           let cursor = data.presence.cursor;
           setCursors(cursorid, cursor);
