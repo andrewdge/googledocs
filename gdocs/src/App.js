@@ -23,8 +23,8 @@ export default function App() {
             </div>
             <form action="/users/signup" method="post">
                 <section>
-                    <label for="username">Username</label>
-                    <input id="username" name="username" type="text" required />
+                    <label for="name">Name</label>
+                    <input id="name" name="name" type="text" required />
                 </section>
                 <section>
                     <label for="password">Password</label>
