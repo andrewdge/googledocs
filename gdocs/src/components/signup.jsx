@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from 'react'
 
-export default function Login() {
+export default function Signup() {
     let navigate = useNavigate();
 
     const [inputs, setInputs] = useState({});
@@ -12,14 +12,13 @@ export default function Login() {
         setInputs(values => ({ ...values, [name]: value}))
     }   
 
-    const handleLogin = async (e) => {
+    const handleSignUp = async (e) => {
         console.log('clicked')
-
-        e.preventDefault()
-        let json = JSON.stringify({ email: inputs.email, password: inputs.password})
+        let json = JSON.stringify({ name: inputs.name, email: inputs.email, password: inputs.password})
         console.log(json)
+        
 
-        if (inputs.email === '' || inputs.password === '') {
+        if (inputs.email === '' || inputs.password === '' || inputs.name === '') {
             console.log('empty')
             return;
         }
@@ -43,9 +42,13 @@ export default function Login() {
     return (
         <>
             <div>
-                Login
+                Signup
             </div>
-            <form onSubmit={handleLogin}>
+            <form onSubmit={handleSignUp}>
+                <label>
+                    Name: 
+                    <input type="text" name="name" value={inputs.name || ""} onChange={handleChange} /> 
+                </label>
                 <label>
                     Email: 
                     <input type="text" name="email" value={inputs.email || ""} onChange={handleChange} /> 

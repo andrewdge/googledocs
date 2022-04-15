@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navigate, Outlet, Link } from "react-router-dom";
 import Login from "./components/login"
 import Logout from "./components/logout"
+import Signup from './components/signup'
 import { useCookies } from 'react-cookie';
 
 export default function App() {
@@ -16,7 +17,10 @@ export default function App() {
     <div>
       <div>
         {!cookies.name ? 
-          <Login />
+          <>
+            <Signup />
+            <Login />
+          </>
         : 
         <Navigate to={{
             pathname: "/home"
