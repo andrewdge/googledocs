@@ -213,8 +213,9 @@ app.get("/media/access/:mediaid", (req, res) => {
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
   if (!req.cookies.cookie) {
       res.redirect('/')
+  } else {
+    res.sendFile(`./images/${id}.png`, {root: __dirname})
   }
-  res.sendFile(`./images/${id}.png`, {root: __dirname})
 })
 
 // TODO: edit so takes in DOCID and OPID
@@ -247,13 +248,14 @@ app.get('/doc/get/:docid/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (!req.cookies.cookie) {
         res.redirect('/')
+    } else {
+        var doc = connect.get('documents', req.params.docid);
+        var cfg = {}
+        var converter = new DeltaConverter(doc.data.ops, cfg)
+        var html = converter.convert()
+        res.send(html)
+        res.end()
     }
-    var doc = connect.get('documents', req.params.docid);
-    var cfg = {}
-    var converter = new DeltaConverter(doc.data.ops, cfg)
-    var html = converter.convert()
-    res.send(html)
-    res.end()
 })
 
 app.get('/doc/edit/:docid', (req, res) => {
@@ -270,53 +272,54 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     console.log("connectaffffffffffffffffffffasdfsaaADFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
     if (!req.cookies.cookie){
         res.redirect('/')
-    }
-    num = 0
-    res.writeHead(200, {
-        'X-Accel-Buffering': 'no',
-        // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
-    }) // set up http stream
-    res.flushHeaders(); // send headers
-    let doc = connect.get("documents", req.params.docid)// get ops
-    let oplist = ""
-    if (doc.data)
-      oplist = doc.data.ops
+    } else {
+        num = 0
+        res.writeHead(200, {
+            'X-Accel-Buffering': 'no',
+            // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
+        }) // set up http stream
+        res.flushHeaders(); // send headers
+        let doc = connect.get("documents", req.params.docid)// get ops
+        let oplist = ""
+        if (doc.data)
+        oplist = doc.data.ops
 
 
-    let content = JSON.stringify({ content: oplist, version: doc.version })
-    //let content = JSON.stringify({content: oplist})
-    let presence = connect.getDocPresence(doc.collection, doc.id)
-    presence.subscribe();
-    presence.create(req.params.id);
-    console.log(`first write: ${content}`)
-    res.write("data: " + content  + "\n\n")
-    doc.on('op', (op, src) => {
+        let content = JSON.stringify({ content: oplist, version: doc.version })
+        //let content = JSON.stringify({content: oplist})
+        let presence = connect.getDocPresence(doc.collection, doc.id)
+        presence.subscribe();
+        presence.create(req.params.id);
+        console.log(`first write: ${content}`)
+        res.write("data: " + content  + "\n\n")
+        doc.on('op', (op, src) => {
+            if (src == req.params.id) {
+            return
+            }
+            let content = JSON.stringify({ content: op })
+            console.log(`subsequent write: ${content}`)
+            res.write("data: " + content + "\n\n")
+        });
+        doc.on("before op", (op, src) => {
         if (src == req.params.id) {
-          return
+            content = JSON.stringify({ack: op})
+            res.write("data: " + content + "\n\n")
+            return
         }
-        let content = JSON.stringify({ content: op })
-        console.log(`subsequent write: ${content}`)
-        res.write("data: " + content + "\n\n")
-    });
-    doc.on("before op", (op, src) => {
-      if (src == req.params.id) {
-        content = JSON.stringify({ack: op})
-        res.write("data: " + content + "\n\n")
-        return
-      }
-    })
-    
-    share.use('sendPresence', function(context,next){
-        if (context.presence.d !== req.params.docid) return;
-        let presenceObj = {...context.presence.p, name: JSON.parse(req.cookies.cookie).name};
-        let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
-        res.write("data: " + content + "\n\n" );
-        next()
-    }) 
+        })
+        
+        share.use('sendPresence', function(context,next){
+            if (context.presence.d !== req.params.docid) return;
+            let presenceObj = {...context.presence.p, name: JSON.parse(req.cookies.cookie).name};
+            let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
+            res.write("data: " + content + "\n\n" );
+            next()
+        }) 
+    }
 });
 
 // Presence id API
@@ -364,6 +367,7 @@ app.post("/users/logout", async (req, res) => {
 		res.json({ error: true, message: 'logout cookies session id error' });
 	}
 	else {
+        console.log('logging out user: ' + JSON.parse(req.cookies.cookie).id)
 		// res.cookie("id", "", { path: '/', expires: new Date() })
         // res.cookie("name", "", { path: '/', expires: new Date() })
         // res.clearCookie("id")
