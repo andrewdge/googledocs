@@ -323,8 +323,8 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
 // Login route
 app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    // console.log('login with email: ' + req.body.email)
-    console.log(req.body)
+    console.log('login with email: ' + req.body.email)
+    // console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
     if (user) console.log(user.verified)
 	if (req.cookies.id === req.sessionID) {
@@ -361,7 +361,8 @@ app.post("/users/logout", async (req, res) => {
 // Signup route. TODO: Mail fix
 app.post("/users/signup", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    console.log(req.body)
+    // console.log(req.body)
+    console.log('signup with email: ' + req.body.email)
     let user = await User.findOne({ email: req.body.email });
     if (user) {
         return res.json({ error: true, message: 'signup user exist error' });
