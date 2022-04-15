@@ -21,6 +21,7 @@ const { Doc } = require('./models/doc')
 const download = require('image-downloader')
 const { v4 } = require('uuid');
 const MongoShareDB = require('sharedb-mongo');
+const multer = require('multer')
 
 
 const PORT = 8080;
@@ -206,7 +207,7 @@ app.get('/collection/list', async (req, res) => {
 })
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
-app.post("/media/upload", async (req, res) => {
+app.post("/media/upload", multer().none(), async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var id = uuid.v4()
     console.log(req.body)

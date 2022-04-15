@@ -19,6 +19,7 @@
     "joi": "^17.6.0",
     "json5": "^2.2.1",
     "mongoose": "^6.2.10",
+    "multer": "^1.4.4",
     "nodemailer": "^6.7.3",
     "nodemon": "^2.0.15",
     "quill-cursors": "^3.1.2",
