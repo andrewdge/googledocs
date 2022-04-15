@@ -60,6 +60,7 @@ app.use(session({
     resave: true,
     saveUninitialized: true
 }));
+const upload = multer({ dest: './gdocs/public'})
 
 // CORS between the front/backend
 // app.use(cors({
@@ -207,7 +208,7 @@ app.get('/collection/list', async (req, res) => {
 })
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
-app.post("/media/upload", multer().none(), async (req, res) => {
+app.post("/media/upload", upload.single("file"), async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var id = uuid.v4()
     console.log(req.body)
