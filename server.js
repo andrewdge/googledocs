@@ -381,8 +381,8 @@ app.post("/users/signup", async (req, res) => {
             from: 'root@googledocs-m2',
             to: req.body.email,
             subject: 'Verification Password',
-            text: `209.151.153.183:8080/users/verify?email=${req.body.email}&key=${key}`,
-            html: `<div>209.151.153.183:8080/users/verify?email=${req.body.email}&key=${key}</div>`
+            text: `209.151.153.183:8080/users/verify?email=${encodeURIComponent(req.body.email)}&key=${key}`,
+            html: `<div>209.151.153.183:8080/users/verify?email=${encodeURIComponent(req.body.email)}&key=${key}</div>`
         }
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
