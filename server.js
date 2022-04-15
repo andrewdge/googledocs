@@ -186,6 +186,7 @@ app.get('/collection/list', async (req, res) => {
             return res.json(json);
         })
     } else {
+        console.log(req.cookies.name)
         res.json({ error: true, message: '/collection/list not logged in'})
     }
     
@@ -333,8 +334,8 @@ app.post("/users/login", async (req, res) => {
     } else if (user && user.password !== req.body.password) {
         res.json({ error: true, message: 'login incorrect password'});
     } else if (user) {
-		res.cookie('id', req.sessionID);
-        res.cookie('name', user.name);
+		res.cookie('id', req.sessionID, { path: '/' });
+        res.cookie('name', user.name, { path: '/' });
         res.json({ name: user.name });
 	} else {
         console.log('login good luck:' + req.body.email + ' and ' + req.body.password)
