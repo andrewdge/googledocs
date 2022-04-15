@@ -80,7 +80,7 @@ const share = new ShareDB({db: docDB, presence: true, doNotForwardSendPresenceEr
 
 // ShareDB connection
 const wss = new WebSocket.Server({ port: 8090 }); //Webserver for clients to connect to sharedb
-const ws = new WebSocket("ws://localhost:8090") //websocket for sharedb connection
+// const ws = new WebSocket("ws://localhost:8090") //websocket for sharedb connection
 wss.on('connection', (webSocket) => {
     share.listen(new WebSocketJSONStream(webSocket));
 })
