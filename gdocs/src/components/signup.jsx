@@ -30,7 +30,7 @@ export default function Signup() {
             headers: {
                 'Accept': '*/*',
                 'Content-Type': 'application/json',
-                'credentials': 'include'
+                'Access-Control-Allow-Credentials': true,
             },
             body: JSON.stringify(inputs)
         });
