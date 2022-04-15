@@ -166,6 +166,7 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
+    console.log(req.cookies)
     if (req.cookies && req.cookies.id && req.cookies.name) {
         let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
         query.on('ready', async () =>{
@@ -185,7 +186,7 @@ app.get('/collection/list', async (req, res) => {
             return res.json(json);
         })
     } else {
-        res.json({ error: true, message: 'collection/list not logged in'})
+        res.json({ error: true, message: '/collection/list not logged in'})
     }
     
 })
@@ -404,7 +405,6 @@ app.post("/users/signup", async (req, res) => {
 app.get("/users/verify", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     console.log('trying verify: ' + req.query.email + ' with vpass: ' + req.query.key)
-    console.log(req.query.email)
     let user = await User.findOne({ email: req.query.email });
     if ((user && req.query.key === "KEY") || (user && req.query.key === user.vpassword)) {
         await User.updateOne({ email: req.query.email }, { verified: true });
