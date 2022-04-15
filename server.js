@@ -383,7 +383,7 @@ app.post("/users/signup", async (req, res) => {
             from: 'root@googledocs-m2',
             to: req.body.email,
             subject: 'Verification Password',
-            text: `http://teos-llamas.cse356.compas.cs.stonybrook.edu/users/verify?email=${req.body.email}&key=${key}`
+            text: `http://teos-llamas.cse356.compas.cs.stonybrook.edu/users/verify?email=${encodeURIComponent(req.body.email)}&key=${key}`
         }
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
