@@ -126,7 +126,7 @@ app.get('/', (req, res) => {
 // Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.headers.cookies.id) {
+    if (req.headers.cookies && req.headers.cookies.id) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -183,7 +183,7 @@ app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
     // console.log(req.cookies)
-    if (req.headers.cookies.id) {
+    if (req.headers.cookies && req.headers.cookies.id) {
         let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
         query.on('ready', async () =>{
             let documents = await Promise.all(query.results.map( async (element,index) => {
@@ -228,7 +228,7 @@ app.post("/media/upload", async (req, res) => {
 app.get("/media/access/:mediaid", (req, res) => {
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-  if (!req.headers.cookies.id) {
+  if (!req.headers.cookies && !req.headers.cookies.id) {
       res.redirect('/')
   } else {
     res.sendFile(`./images/${id}.png`, {root: __dirname})
@@ -263,7 +263,7 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
 // Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (!req.headers.cookies.id) {
+    if (!req.headers.cookies && !req.headers.cookies.id) {
         res.redirect('/')
     } else {
         var doc = connect.get('documents', req.params.docid);
@@ -277,7 +277,7 @@ app.get('/doc/get/:docid/:id', (req, res) => {
 
 app.get('/doc/edit/:docid', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.headers.cookies.id) {
+    if (req.headers.cookies && req.headers.cookies.id) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
