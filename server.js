@@ -333,8 +333,12 @@ app.post("/users/login", async (req, res) => {
 		res.cookie('id', req.sessionID);
         res.cookie('name', req.body.name);
         res.json({ name: user.name });
-	} else {
-		res.json({ error: true, message: 'login incorrect password error' });
+	} else if (user.verified === false) {
+        res.json({ error: true, message: 'login user not verified'});
+    } else if (user.password !== req.body.password) {
+        res.json({ error: true, message: 'login incorrect password'})
+    } else {
+		res.json({ error: true, message: 'login some other error ig' });
 	}
 })
 
