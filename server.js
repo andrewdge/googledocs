@@ -314,8 +314,8 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
         
         share.use('sendPresence', function(context,next){
             if (context.presence.d !== req.params.docid) return;
-            let presenceObj = {...context.presence.p, name: JSON.parse(req.cookies.cookie).name};
-            let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
+            //let presenceObj = {...context.presence.p, name: JSON.parse(req.cookies.cookie).name};
+            let content = JSON.stringify({presence: {id: context.presence.id, cursor: context.presence.p }});
             res.write("data: " + content + "\n\n" );
             next()
         }) 
@@ -328,8 +328,10 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
     //Use the corresponding local presence to submit the provided location of cursor
     let doc = connect.get("documents", req.params.docid)
     let presence = connect.getDocPresence(doc.collection, doc.id)
-    presence.localPresences[req.params.id].submit(req.body);
+    let cursor = {...req.body, name: JSON.parse(req.cookies.cookie).name};
+    presence.localPresences[req.params.id].submit(cursor);
     res.end();
+
 
 })
 
