@@ -37,6 +37,7 @@ export default function Login() {
         if (req) {
             console.log('received');
         }
+        e.preventDefault()
 
         // navigate('/home')
     }
@@ -56,6 +57,7 @@ export default function Login() {
                     <input type="text" name="password" value={inputs.password || ""} onChange={handleChange} /> 
                 </label>
                 <input type="submit" value="Submit" />
+                {/* <button onClick={handleLogin}>Submit</button> */}
                 
             </form>
         </>

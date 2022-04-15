@@ -6,7 +6,7 @@ import DocList from "../components/docList"
 
 export default function Home() {
     const [cookies, setCookie] = useCookies(['cookie'])
-    let cookie = cookies.cookie;
+    let cookie = cookies;
     return (
         <main style={{ padding: "1rem" }}>
           <div>Home: You are logged in</div>
