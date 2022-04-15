@@ -62,7 +62,8 @@ let transporter = nodemailer.createTransport({
     secure: false,
     port: 25,
     auth: { user: 'root@googledocs-m2', pass: '' },
-    tls: { rejectUnauthorized: false }
+    tls: { rejectUnauthorized: false },
+    name: 'root@googledocs-m2'
   });
 
 // Mongoose setup
@@ -379,7 +380,6 @@ app.post("/users/signup", async (req, res) => {
         
         await user.save();
         let mailOptions = {
-            name: 'root@googledocs-m2',
             from: 'root@googledocs-m2',
             to: req.body.email,
             subject: 'Verification Password',
