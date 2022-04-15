@@ -182,8 +182,10 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    // console.log(req.cookies)
-    if (req.headers.cookie && req.headers.cookie.id) {
+    console.log(req.cookies)
+    console.log(req.session)
+    console.log(req.session.loggedIn)
+    if (req.session.loggedIn) {
         let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
         query.on('ready', async () =>{
             let documents = await Promise.all(query.results.map( async (element,index) => {
@@ -359,8 +361,10 @@ app.post("/users/login", async (req, res) => {
         res.json({ error: true, message: 'login incorrect password'});
     } else if (user) {
         console.log('logged in')
-        res.cookie('id', req.sessionID, { maxAge: 900000, httpOnly: true})
-        res.cookie('name', user.name, { maxAge: 900000, httpOnly: true})
+        req.session.loggedIn = true
+        req.session.email = req.body.email
+        req.session.name = user.name
+        req.session.save()
         res.json({ name: user.name })
 	} else {
         console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
