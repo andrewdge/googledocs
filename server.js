@@ -161,23 +161,28 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
-    query.on('ready', async () =>{
-        let documents = await Promise.all(query.results.map( async (element,index) => {
-          try {
-            let doc = await Doc.findOne({id: element.id})
-            return {id: element.id, name: doc.name}
-          }
-          catch(err) {
-            throw err
-          }
-        }))
-        // console.log(documents);
-        json = JSON.stringify(documents);
-        // console.log(typeof json)
-        console.log(json)
-        return res.json(json);
-    })
+    if (req.cookies && req.cookies.id && req.cookies.name) {
+        let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
+        query.on('ready', async () =>{
+            let documents = await Promise.all(query.results.map( async (element,index) => {
+            try {
+                let doc = await Doc.findOne({id: element.id})
+                return {id: element.id, name: doc.name}
+            }
+            catch(err) {
+                throw err
+            }
+            }))
+            // console.log(documents);
+            json = JSON.stringify(documents);
+            // console.log(typeof json)
+            console.log(json)
+            return res.json(json);
+        })
+    } else {
+        res.redirect('/')
+    }
+    
 })
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
