@@ -110,7 +110,8 @@ app.get('/', (req, res) => {
 // Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.cookies && req.cookies.id && req.cookies.name) {
+    let cookie = JSON.parse(req.cookies.cookie)
+    if (cookie) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -166,8 +167,8 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    console.log(req.cookies)
-    if (req.cookies && req.cookies.id && req.cookies.name) {
+    let cookie = JSON.parse(req.cookies.cookie)
+    if (cookie) {
         let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
         query.on('ready', async () =>{
             let documents = await Promise.all(query.results.map( async (element,index) => {
@@ -186,7 +187,6 @@ app.get('/collection/list', async (req, res) => {
             return res.json(documents);
         })
     } else {
-        console.log(req.cookies.name)
         res.json({ error: true, message: '/collection/list not logged in'})
     }
     
@@ -213,6 +213,10 @@ app.post("/media/upload", async (req, res) => {
 app.get("/media/access/:mediaid", (req, res) => {
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+  let cookie = JSON.parse(req.cookies.cookie)
+  if (!cookie) {
+      res.redirect('/')
+  }
   res.sendFile(`./images/${id}.png`, {root: __dirname})
 })
 
@@ -244,6 +248,10 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
 // Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    let cookie = JSON.parse(req.cookies.cookie);
+    if (!cookie) {
+        res.redirect('/')
+    }
     var doc = connect.get('documents', req.params.docid);
     var cfg = {}
     var converter = new DeltaConverter(doc.data.ops, cfg)
@@ -254,7 +262,8 @@ app.get('/doc/get/:docid/:id', (req, res) => {
 
 app.get('/doc/edit/:docid', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.cookies && req.cookies.id && req.cookies.name) {
+    let cookie = JSON.parse(req.cookies.cookie)
+    if (cookie) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -264,6 +273,10 @@ app.get('/doc/edit/:docid', (req, res) => {
 // TODO: Has to also take in userID: /doc/connect/DOCID/UID
 app.get('/doc/connect/:docid/:id', async (req, res) => {
     console.log("connectaffffffffffffffffffffasdfsaaADFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+    let cookie = JSON.parse(req.cookies.cookie)
+    if (!cookie){
+        res.redirect('/')
+    }
     num = 0
     res.writeHead(200, {
         'X-Accel-Buffering': 'no',
@@ -337,7 +350,12 @@ app.post("/users/login", async (req, res) => {
     } else if (user) {
 		// res.cookie('id', req.sessionID);
         // res.cookie('name', user.name);
-        res.setHeader('Set-Cookie', `id=${req.sessionID};name=${user.name}`);
+        // res.setHeader('Set-Cookie', `id=${req.sessionID};name=${user.name}`);
+        let cookie = JSON.stringify({
+            'id': req.sessionID,
+            'name': user.name
+        })
+        res.cookie('data', cookie);
         res.json({ name: user.name });
 	} else {
         console.log('login good luck:' + req.body.email + ' and ' + req.body.password)
@@ -348,14 +366,16 @@ app.post("/users/login", async (req, res) => {
 // Logout route
 app.post("/users/logout", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-	if (req.cookies.id !== req.sessionID) {
+    let cookie = JSON.parse(req.cookies.cookie)
+	if (cookie.id !== req.sessionID) {
 		res.json({ error: true, message: 'logout cookies session id error' });
 	}
 	else {
 		// res.cookie("id", "", { path: '/', expires: new Date() })
         // res.cookie("name", "", { path: '/', expires: new Date() })
-        res.clearCookie("id")
-        res.clearCookie("name")
+        // res.clearCookie("id")
+        // res.clearCookie("name")
+        res.clearCookie('cookie')
         // res.json({ status: "OK" })
         res.json({})
 	}
