@@ -126,7 +126,7 @@ app.get('/', (req, res) => {
 // Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.headers.cookie && req.headers.cookie.id) {
+    if (req.session.loggedIn) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -182,7 +182,6 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    console.log(req.cookies)
     console.log(req.session)
     console.log(req.session.loggedIn)
     if (req.session.loggedIn) {
@@ -230,7 +229,7 @@ app.post("/media/upload", async (req, res) => {
 app.get("/media/access/:mediaid", (req, res) => {
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-  if (!req.headers.cookie && !req.headers.cookie.id) {
+  if (!req.session.loggedIn) {
       res.redirect('/')
   } else {
     res.sendFile(`./images/${id}.png`, {root: __dirname})
@@ -265,7 +264,7 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
 // Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (!req.headers.cookie && !req.headers.cookie.id) {
+    if (!req.session.loggedIn) {
         res.redirect('/')
     } else {
         var doc = connect.get('documents', req.params.docid);
@@ -279,7 +278,7 @@ app.get('/doc/get/:docid/:id', (req, res) => {
 
 app.get('/doc/edit/:docid', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.headers.cookie && req.headers.cookie.id) {
+    if (req.session.loggedIn) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -329,7 +328,7 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     
     share.use('sendPresence', function(context,next){
         if (context.presence.d !== req.params.docid) return;
-        let presenceObj = {...context.presence.p, name: req.headers.cookie.name};
+        let presenceObj = {...context.presence.p, name: req.session.name};
         let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
         res.write("data: " + content + "\n\n" );
         next()
@@ -342,7 +341,7 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
     //Use the corresponding local presence to submit the provided location of cursor
     let doc = connect.get("documents", req.params.docid)
     let presence = connect.getDocPresence(doc.collection, doc.id)
-    let cursor = {...req.body, name: req.headers.cookie.name};
+    let cursor = {...req.body, name: req.session.name};
     presence.localPresences[req.params.id].submit(cursor);
     res.end();
 
@@ -375,8 +374,8 @@ app.post("/users/login", async (req, res) => {
 // Logout route
 app.post("/users/logout", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-	if (req.headers.cookie && req.headers.cookie.id !== req.sessionID) {
-		res.json({ error: true, message: 'logout cookies session id error' });
+	if (!req.session.loggedIn) {
+		res.json({ error: true, message: 'logout not logged in' });
 	}
 	else {
         console.log('logging out user: ' + req.headers.cookie.id)
