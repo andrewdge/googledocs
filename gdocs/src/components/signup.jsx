@@ -14,7 +14,8 @@ export default function Signup() {
 
     const handleSignUp = async (e) => {
         console.log('clicked')
-        let json = JSON.stringify({ name: inputs.name, email: inputs.email, password: inputs.password})
+        // e.preventDefault()
+        let json = JSON.stringify(inputs)
         console.log(json)
         
 
@@ -23,14 +24,14 @@ export default function Signup() {
             return;
         }
 
-        let req = await fetch('/users/login', {
+        let req = await fetch('/users/signup', {
             method: "POST",
             header: {
                 'Accept': '*/*',
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
                 'credentials': 'include'
             },
-            body: json
+            body: JSON.stringify({ name: inputs.name, email: inputs.email, password: inputs.password})
         });
         if (req) {
             console.log('received');

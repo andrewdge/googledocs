@@ -29,8 +29,12 @@ const app = express()
 // const wss = new WebSocket.Server({ server: server })
 
 // For image/file limit
-app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
-app.use(bodyParser.json())
+// app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
+// app.use(bodyParser.json())
+
+app.use(cors({ credentials: true }))
+// app.use(express.json())
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser())
 // Set up cookies
 app.use(session({
@@ -40,10 +44,10 @@ app.use(session({
 }));
 
 // CORS between the front/backend
-app.use(cors({
-    credentials: true,
-    origin: ['http://localhost:3000', 'http://localhost:8080', '209.151.149.120:3000', '209.151.149.120:8080']
-})); // need this since we are on 2 ports
+// app.use(cors({
+//     credentials: true,
+//     origin: ['http://localhost:3000', 'http://localhost:8080', '209.151.149.120:3000', '209.151.149.120:8080']
+// })); // need this since we are on 2 ports
 
 // Probably not needed
 // app.set('views', path.join(__dirname, 'views'))
@@ -319,13 +323,14 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
 app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     console.log('hi')
+    console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
     if (user) console.log(user)
 	if (req.cookies.id === req.sessionID) {
 		res.json({ error: true, message: 'login mismatch sessionID and cookie id' });
     } else if (user) {
 		res.cookie('id', req.sessionID);
-        res.cookie('name', req.body.username);
+        res.cookie('name', req.body.name);
         res.json({ name: user.name });
 	} else {
 		res.json({ error: true, message: 'login incorrect password error' });
@@ -359,7 +364,7 @@ app.post("/users/signup", async (req, res) => {
         // Insert the new user if they do not exist yet
         let key = v4();
         user = new User({
-            username: req.body.username,
+            name: req.body.name,
             email: req.body.email,
             password: req.body.password,
             verified: false,

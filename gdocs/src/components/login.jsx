@@ -15,8 +15,8 @@ export default function Login() {
     const handleLogin = async (e) => {
         console.log('clicked')
 
-        e.preventDefault()
-        let json = JSON.stringify({ email: inputs.email, password: inputs.password})
+        // e.preventDefault()
+        let json = JSON.stringify(inputs)
         console.log(json)
 
         if (inputs.email === '' || inputs.password === '') {
@@ -31,7 +31,7 @@ export default function Login() {
                 'Content-Type': 'application/json',
                 'credentials': 'include'
             },
-            body: json
+            body: JSON.stringify({ email: inputs.email, password: inputs.password })
         });
         if (req) {
             console.log('received');

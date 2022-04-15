@@ -2,7 +2,7 @@ const Joi = require('joi');
 const mongoose = require('mongoose');
 
 const User = mongoose.model('User', new mongoose.Schema({
-    username: {
+    name: {
         type: String,
         required: true,
     },
@@ -27,7 +27,7 @@ const User = mongoose.model('User', new mongoose.Schema({
 
 function validateUser(user) {
     const schema = Joi.object({
-        username: Joi.string().required(),
+        name: Joi.string().required(),
         email: Joi.string().required().email(),
         password: Joi.string().required(),
         vpassword: Joi.string().required()
