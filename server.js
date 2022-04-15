@@ -365,7 +365,7 @@ app.post("/users/login", async (req, res) => {
             'id': req.sessionID,
             'name': user.name
         })
-        res.cookie('cookie', cookie).json({ name: user.name });
+        res.cookie('cookie', cookie).status(200).json({ name: user.name });
 	} else {
         console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
 		res.json({ error: true, message: 'login error prob no user found' });
