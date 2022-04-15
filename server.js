@@ -240,12 +240,12 @@ app.get("/media/access/:mediaid", (req, res) => {
 app.post('/doc/op/:docid/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let doc = connect.get("documents", req.params.docid)
-    let ops = req.body.payload // Array of arrays of OTs
-    
+    let ops = req.body.op // Array of arrays of OTs
+    console.log(req.body)
     let clientVersion = req.body.version
     console.log(`client: ${clientVersion}`)
     console.log(`doc: ${doc.version}`)
-    if (clientVersion < doc.version) {
+    if (clientVersion < doc.version-1) {
       console.log(clientVersion)
       console.log(doc.version)
       res.json({status: "retry"})
@@ -312,19 +312,22 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     res.write("data: " + content  + "\n\n")
     doc.on('op', (op, src) => {
         if (src == req.params.id) {
-            return
+          content = JSON.stringify({ack: op, version: doc.version})
+          res.write("data: " + content + "\n\n")
         }
-        let content = JSON.stringify({ content: op })
-        console.log(`subsequent write: ${content}`)
-        res.write("data: " + content + "\n\n")
+        else {
+          let content = JSON.stringify({ content: op, version: doc.version })
+          console.log(`subsequent write: ${content}`)
+          console.log("doc from on")
+          console.log(doc.version)
+          res.write("data: " + content + "\n\n")
+        }
     });
-    doc.on("before op", (op, src) => {
-        if (src == req.params.id) {
-            content = JSON.stringify({ack: op})
-            res.write("data: " + content + "\n\n")
-            return
-        }
-    })
+    // doc.on("before op", (op, src) => {
+    //     if (src == req.params.id) {
+            
+    //     }
+    // })
     
     share.use('sendPresence', function(context,next){
         if (context.presence.d !== req.params.docid) return;
