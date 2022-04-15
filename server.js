@@ -332,13 +332,14 @@ app.post("/users/login", async (req, res) => {
 		res.json({ error: true, message: 'login mismatch sessionID and cookie id' });
     } else if (user) {
 		res.cookie('id', req.sessionID);
-        res.cookie('name', req.body.name);
+        res.cookie('name', user.name);
         res.json({ name: user.name });
 	} else if (user && user.verified === false) {
         res.json({ error: true, message: 'login user not verified'});
     } else if (user && user.password !== req.body.password) {
         res.json({ error: true, message: 'login incorrect password'});
     } else {
+        console.log('login good luck:' + req.body.email + ' and ' + req.body.password)
 		res.json({ error: true, message: 'login error good luck' });
 	}
 })
@@ -383,8 +384,8 @@ app.post("/users/signup", async (req, res) => {
             from: 'root@googledocs-m2',
             to: req.body.email,
             subject: 'Verification Password',
-            text: `http://http://teos-llamas.cse356.compas.cs.stonybrook.edu//users/verify?email=${req.body.email}&key=${key}`,
-            html: `<div>http://http://teos-llamas.cse356.compas.cs.stonybrook.edu/users/verify?email=${req.body.email}&key=${key}</div>`
+            text: `http://teos-llamas.cse356.compas.cs.stonybrook.edu/users/verify?email=${req.body.email}&key=${key}`,
+            html: `<div>http://teos-llamas.cse356.compas.cs.stonybrook.edu/users/verify?email=${req.body.email}&key=${key}</div>`
         }
         let info = await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
