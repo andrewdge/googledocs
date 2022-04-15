@@ -180,12 +180,13 @@ app.get('/collection/list', async (req, res) => {
             }
             }))
             // console.log(documents);
-            json = JSON.stringify(documents);
+            // json = JSON.stringify(documents);
             // console.log(typeof json)
-            console.log(json)
-            return res.json(json);
+            // console.log(json)
+            return res.json(documents);
         })
     } else {
+        console.log(req.cookies.name)
         res.json({ error: true, message: '/collection/list not logged in'})
     }
     
@@ -334,8 +335,9 @@ app.post("/users/login", async (req, res) => {
     } else if (user && user.password !== req.body.password) {
         res.json({ error: true, message: 'login incorrect password'});
     } else if (user) {
-		res.cookie('id', req.sessionID);
-        res.cookie('name', user.name);
+		// res.cookie('id', req.sessionID);
+        // res.cookie('name', user.name);
+        res.setHeader('Set-Cookie', `id=${req.sessionID};name=${user.name}`);
         res.json({ name: user.name });
 	} else {
         console.log('login good luck:' + req.body.email + ' and ' + req.body.password)
