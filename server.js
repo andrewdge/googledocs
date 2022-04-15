@@ -359,21 +359,9 @@ app.post("/users/login", async (req, res) => {
         res.json({ error: true, message: 'login incorrect password'});
     } else if (user) {
         console.log('logged in')
-		// res.cookie('id', req.sessionID);
-        // res.cookie('name', user.name);
-        // res.setHeader('Set-Cookie', `id=${req.sessionID};name=${user.name}`);
-        // let cookie = JSON.stringify({
-        //     'id': req.sessionID,
-        //     'name': user.name
-        // })
-        // res.cookie('cookie', cookie).status(200).json({ name: user.name });
-        // res.setHeader('Set-Cookie', [
-        //     `id=${req.sessionID}; path=/`,
-        //     `name=${user.name}; path=/`
-        // ])
-        res.cookie('id', req.sessionID)
-        res.cookie('name', user.name)
-        res.status(200).json({ name: user.name })
+        res.cookie('id', req.sessionID, { maxAge: 900000, httpOnly: true})
+        res.cookie('name', user.name, { maxAge: 900000, httpOnly: true})
+        res.json({ name: user.name })
 	} else {
         console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
 		res.json({ error: true, message: 'login error prob no user found' });
