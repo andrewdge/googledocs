@@ -328,7 +328,7 @@ app.post("/users/login", async (req, res) => {
     // console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
     if (user) console.log(user.verified)
-	if (req.cookies.id === req.sessionID) {
+	if (req.cookies.id !== req.sessionID) {
 		res.json({ error: true, message: 'login mismatch sessionID and cookie id' });
     } else if (user) {
 		res.cookie('id', req.sessionID);
@@ -409,7 +409,7 @@ app.get("/users/verify", async (req, res) => {
     if (user && req.query.key === "KEY" || user && req.query.key === user.vpassword) {
         await User.updateOne({ email: req.query.email }, { verified: true });
         user = await User.findOne({ email: req.query.email });
-        console.log('verified')
+        console.log('verified ' + req.query.email)
         res.redirect('/')
         // res.json({ status: "OK" })
     } else {
