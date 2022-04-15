@@ -336,8 +336,7 @@ app.post("/users/login", async (req, res) => {
 		res.cookie('id', req.sessionID);
         res.cookie('name', user.name);
         res.json({ name: user.name });
-	})
-    else {
+	} else {
         console.log('login good luck:' + req.body.email + ' and ' + req.body.password)
 		res.json({ error: true, message: 'login error good luck' });
 	}
