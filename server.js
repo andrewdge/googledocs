@@ -110,8 +110,7 @@ app.get('/', (req, res) => {
 // Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    let cookie = JSON.parse(req.cookies.cookie)
-    if (cookie) {
+    if (req.cookies.cookie) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -167,8 +166,7 @@ app.post('/collection/delete', (req, res) => {
 app.get('/collection/list', async (req, res) => {
     console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    let cookie = JSON.parse(req.cookies.cookie)
-    if (cookie) {
+    if (req.cookies.cookie) {
         let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
         query.on('ready', async () =>{
             let documents = await Promise.all(query.results.map( async (element,index) => {
@@ -213,8 +211,7 @@ app.post("/media/upload", async (req, res) => {
 app.get("/media/access/:mediaid", (req, res) => {
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-  let cookie = JSON.parse(req.cookies.cookie)
-  if (!cookie) {
+  if (!req.cookies.cookie) {
       res.redirect('/')
   }
   res.sendFile(`./images/${id}.png`, {root: __dirname})
@@ -248,8 +245,7 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
 // Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    let cookie = JSON.parse(req.cookies.cookie);
-    if (!cookie) {
+    if (!req.cookies.cookie) {
         res.redirect('/')
     }
     var doc = connect.get('documents', req.params.docid);
@@ -262,8 +258,7 @@ app.get('/doc/get/:docid/:id', (req, res) => {
 
 app.get('/doc/edit/:docid', (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    let cookie = JSON.parse(req.cookies.cookie)
-    if (cookie) {
+    if (req.cookies.cookie) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
@@ -273,8 +268,7 @@ app.get('/doc/edit/:docid', (req, res) => {
 // TODO: Has to also take in userID: /doc/connect/DOCID/UID
 app.get('/doc/connect/:docid/:id', async (req, res) => {
     console.log("connectaffffffffffffffffffffasdfsaaADFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-    let cookie = JSON.parse(req.cookies.cookie)
-    if (!cookie){
+    if (!req.cookies.cookie){
         res.redirect('/')
     }
     num = 0
@@ -318,7 +312,7 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     
     share.use('sendPresence', function(context,next){
         if (context.presence.d !== req.params.docid) return;
-        let presenceObj = {...context.presence.p, name: req.cookies.name};
+        let presenceObj = {...context.presence.p, name: JSON.parse(req.cookies.cookie).name};
         let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
         res.write("data: " + content + "\n\n" );
         next()
@@ -355,7 +349,7 @@ app.post("/users/login", async (req, res) => {
             'id': req.sessionID,
             'name': user.name
         })
-        res.cookie('data', cookie);
+        res.cookie('cookie', cookie);
         res.json({ name: user.name });
 	} else {
         console.log('login good luck:' + req.body.email + ' and ' + req.body.password)
@@ -366,8 +360,7 @@ app.post("/users/login", async (req, res) => {
 // Logout route
 app.post("/users/logout", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    let cookie = JSON.parse(req.cookies.cookie)
-	if (cookie.id !== req.sessionID) {
+	if (req.cookies.cookie && JSON.parse(req.cookies.cookie).id !== req.sessionID) {
 		res.json({ error: true, message: 'logout cookies session id error' });
 	}
 	else {
