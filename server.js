@@ -22,6 +22,7 @@ const download = require('image-downloader')
 const { v4 } = require('uuid');
 const MongoShareDB = require('sharedb-mongo');
 const multer = require('multer')
+const upload = multer({ dest: './images'})
 
 
 const PORT = 8080;
@@ -60,7 +61,7 @@ app.use(session({
     resave: true,
     saveUninitialized: true
 }));
-const upload = multer({ dest: './gdocs/public'})
+
 
 // CORS between the front/backend
 // app.use(cors({
@@ -211,28 +212,30 @@ app.get('/collection/list', async (req, res) => {
 app.post("/media/upload", upload.single("file"), async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var id = uuid.v4()
-    console.log(req.body)
-    var uri = req.body[0].insert.image
-    var index = uri.lastIndexOf(".")
-    console.log(uri)
-    var mime = uri.substring(index + 1)
-    if (mime !== "jpeg" && mime !== "jpg" && mime !== "png") res.send(JSON.stringify("Unsupported file type"))
-    var options = {url: uri, dest: path.join(__dirname, "images", `${id}.png`)}
-    download.image(options)
-    .then(({ filename }) => {
-        console.log('Saved to', filename)  // saved to /path/to/dest/photo.jpg
-    })
-    .catch((err) => console.error(err))
-    res.send(JSON.stringify(id))
+    console.log(req.file)
+    let file = req.file
+    if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
+        let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
+        console.log('mimetype: ' + type)
+        let options = {url: file, dest: path.join(__dirname, "images", `${file.filename}.${type}`)}
+        download.image(options).then(({ filename }) => { console.log('saved to ', filename)}).catch((err) => console.log(err))
+        console.log('image downloaded')
+        res.json({ mediaid: id})
+    } else {
+        console.log('unsupported filetype')
+        res.json({ error: true, message: 'unsupported filetype'})
+    }
 })
 
 app.get("/media/access/:mediaid", (req, res) => {
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
   if (!req.session.loggedIn) {
+      console.log('not logged in image access')
       res.redirect('/')
   } else {
-    res.sendFile(`./images/${id}.png`, {root: __dirname})
+    console.log('getting image: ' + id)
+    res.sendFile(`./images/${id}.jpg`, {root: __dirname})
   }
 })
 
