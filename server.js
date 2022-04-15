@@ -196,10 +196,7 @@ app.get('/collection/list', async (req, res) => {
                 throw err
             }
             }))
-            // console.log(documents);
-            // json = JSON.stringify(documents);
-            // console.log(typeof json)
-            // console.log(json)
+
             return res.json(documents);
         })
     } else {
@@ -212,11 +209,12 @@ app.get('/collection/list', async (req, res) => {
 app.post("/media/upload", async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var id = uuid.v4()
+    console.log(req.body)
     var uri = req.body[0].insert.image
     var index = uri.lastIndexOf(".")
     console.log(uri)
     var mime = uri.substring(index + 1)
-    if (mime != "jpeg" && mime != "jpg" && mime != "png") res.send(JSON.stringify("Unsupported file type"))
+    if (mime !== "jpeg" && mime !== "jpg" && mime !== "png") res.send(JSON.stringify("Unsupported file type"))
     var options = {url: uri, dest: path.join(__dirname, "images", `${id}.png`)}
     download.image(options)
     .then(({ filename }) => {
@@ -241,7 +239,6 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let doc = connect.get("documents", req.params.docid)
     let ops = req.body.op // Array of arrays of OTs
-    console.log(req.body)
     let clientVersion = req.body.version
     console.log(`client: ${clientVersion}`)
     console.log(`doc: ${doc.version}`)
@@ -256,6 +253,7 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
     doc.submitOp(ops, { source: req.params.id }, function() {
       res.json({status: "ok"})
       res.end()
+      
       return
     })
     
@@ -311,17 +309,21 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     console.log(`first write: ${content}`)
     res.write("data: " + content  + "\n\n")
     doc.on('op', (op, src) => {
-        if (src == req.params.id) {
-          content = JSON.stringify({ack: op, version: doc.version})
-          res.write("data: " + content + "\n\n")
-        }
-        else {
-          let content = JSON.stringify({ content: op, version: doc.version })
-          console.log(`subsequent write: ${content}`)
-          console.log("doc from on")
-          console.log(doc.version)
-          res.write("data: " + content + "\n\n")
-        }
+        console.log(`${req.params.id} received op from ${src} for version ${doc.version}`)
+        doc.whenNothingPending(function() {
+          if (src == req.params.id) {
+            content = JSON.stringify({ack: op, version: doc.version})
+            console.log(`ack with ${doc.version}`)
+            res.write("data: " + content + "\n\n")
+          }
+          else {
+            let content = JSON.stringify({ content: op, version: doc.version })
+            // console.log(`subsequent write: ${content}`)
+            console.log(`sending ${doc.version}`)
+            // console.log(doc.version)
+            res.write("data: " + content + "\n\n")
+          }
+        })
     });
     // doc.on("before op", (op, src) => {
     //     if (src == req.params.id) {
