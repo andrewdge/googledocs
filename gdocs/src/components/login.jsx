@@ -26,6 +26,7 @@ export default function Login() {
 
         let req = await fetch('/users/login', {
             method: "POST",
+            credentials: 'include',
             headers: {
                 'Accept': '*/*',
                 'Content-Type': 'application/json',

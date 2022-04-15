@@ -26,6 +26,7 @@ export default function Signup() {
 
         let req = await fetch('/users/signup', {
             method: "POST",
+            credentials: 'include',
             headers: {
                 'Accept': '*/*',
                 'Content-Type': 'application/json',
