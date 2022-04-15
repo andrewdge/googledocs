@@ -379,6 +379,7 @@ app.post("/users/signup", async (req, res) => {
         
         await user.save();
         let mailOptions = {
+            name: 'root@googledocs-m2',
             from: 'root@googledocs-m2',
             to: req.body.email,
             subject: 'Verification Password',
