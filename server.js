@@ -56,7 +56,7 @@ app.use(cookieParser())
 // Set up cookies
 app.use(session({
     secret: 'keyboard cat',
-    resave: false,
+    resave: true,
     saveUninitialized: true
 }));
 
@@ -373,7 +373,7 @@ app.post("/users/login", async (req, res) => {
         // ])
         res.cookie('id', req.sessionID)
         res.cookie('name', user.name)
-        res.json({ name: user.name })
+        res.status(200).json({ name: user.name })
 	} else {
         console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
 		res.json({ error: true, message: 'login error prob no user found' });
