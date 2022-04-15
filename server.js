@@ -180,10 +180,10 @@ app.get('/collection/list', async (req, res) => {
             }
             }))
             // console.log(documents);
-            json = JSON.stringify(documents);
+            // json = JSON.stringify(documents);
             // console.log(typeof json)
-            console.log(json)
-            return res.json(json);
+            // console.log(json)
+            return res.json(documents);
         })
     } else {
         console.log(req.cookies.name)
