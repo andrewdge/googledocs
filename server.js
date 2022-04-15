@@ -404,7 +404,8 @@ app.post("/users/signup", async (req, res) => {
 app.get("/users/verify", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     console.log('trying verify: ' + req.query.email + ' with vpass: ' + req.query.key)
-    let user = await User.findOne({ email: encodeURIComponent(req.query.email) });
+    console.log(req.query.email)
+    let user = await User.findOne({ email: req.query.email });
     if ((user && req.query.key === "KEY") || (user && req.query.key === user.vpassword)) {
         await User.updateOne({ email: req.query.email }, { verified: true });
         user = await User.findOne({ email: req.query.email });
