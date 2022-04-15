@@ -323,7 +323,7 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
 // Login route
 app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    console.log('login with email: ' + req.body.email)
+    // console.log('login with email: ' + req.body.email)
     console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
     if (user) console.log(user.verified)
