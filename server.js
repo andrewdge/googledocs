@@ -295,8 +295,9 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
         return
       }
     })
-
+    
     share.use('sendPresence', function(context,next){
+        if (context.presence.d !== req.params.docid) return;
         let content = JSON.stringify({presence: {id: context.presence.id, cursor: context.presence.p}/*, doc: context.presence.d */});
         res.write("data: " + content + "\n\n" );
         next()
