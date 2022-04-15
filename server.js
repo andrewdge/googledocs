@@ -34,7 +34,8 @@ const app = express()
 
 app.use(cors({ credentials: true }))
 // app.use(express.json())
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true}));
+app.use(express.json())
 app.use(cookieParser())
 // Set up cookies
 app.use(session({

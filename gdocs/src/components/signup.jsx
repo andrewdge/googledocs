@@ -26,13 +26,14 @@ export default function Signup() {
 
         let req = await fetch('/users/signup', {
             method: "POST",
-            header: {
+            headers: {
                 'Accept': '*/*',
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
                 'credentials': 'include'
             },
-            body: JSON.stringify({ name: inputs.name, email: inputs.email, password: inputs.password})
+            body: JSON.stringify(inputs)
         });
+        
         if (req) {
             console.log('received');
         }

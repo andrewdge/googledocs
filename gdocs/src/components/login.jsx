@@ -26,12 +26,12 @@ export default function Login() {
 
         let req = await fetch('/users/login', {
             method: "POST",
-            header: {
+            headers: {
                 'Accept': '*/*',
                 'Content-Type': 'application/json',
                 'credentials': 'include'
             },
-            body: JSON.stringify({ email: inputs.email, password: inputs.password })
+            body: JSON.stringify(inputs)
         });
         if (req) {
             console.log('received');
