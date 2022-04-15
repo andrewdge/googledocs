@@ -23,7 +23,9 @@ export default function DocList() {
             },
         })
         let data = await req.json();
-        setDocs(JSON.parse(data));
+        // let parsed = JSON.parse(data)
+        // console.log(parsed)
+        setDocs(data);
         console.log("printing docs")
         if (data) console.log(data)
     }
