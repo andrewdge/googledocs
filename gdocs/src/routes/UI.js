@@ -18,10 +18,6 @@ Quill.register('modules/cursors', QuillCursors);
 // const connection = new Sharedb.Connection(socket);
 
 const serverBaseURL = process.env.NODE_ENV === 'development' ? "http://localhost:8080" : "";
-//Web socet to connect to webserver hosting sharedb
-const websocketURL = `ws://${window.location.hostname}:8090`
-console.log(window.location.hostname);  
-const connection = new Sharedb.Connection(new ReconnectingWebSocket(websocketURL));
 let buffer = []
 
 // Querying for our document
@@ -35,10 +31,14 @@ let id = uuidv4();
 function UI() {
   const params = useParams()
   let num = 0
+  const websocketURL = `ws://${window.location.hostname}:8090`
+  console.log(window.location.hostname);  
+  const connection = new Sharedb.Connection(new ReconnectingWebSocket(websocketURL));
   docid = params.docid
   doc = connection.get('documents', docid);
   useEffect(() => {
     // Fetch for doc data should be here
+    //Web socet to connect to webserver hosting sharedb
     const cursorColors = {}
     const sse = new EventSource(`${serverBaseURL}/doc/connect/${docid}/${id}`, { withCredentials: true }); // set up event source receiver
     const toolbarOptions =[ ['bold', 'italic', 'underline', 'strike', 'align'], ["image"] ];
@@ -64,15 +64,15 @@ function UI() {
       console.log(version)
 
       //COMMENT OUT IF WE WANT TO SET CURSORS IN presence.on INSTEAD
-      /*
+      
       if (data.presence) {
-          if (data.doc !== docid || data.presence.id === id) return;
-          
+          console.log("PRESENCE DETECTED")
+          if (data.doc !== docid) return;
           let cursorid = data.presence.id;
           let cursor = data.presence.cursor;
           setCursors(cursorid, cursor);
           return 
-      }*/
+      }
       if (data.content) console.log(data.content)
       if (data.version && version == undefined) version = data.version
       if (data.content === undefined) {
@@ -90,11 +90,11 @@ function UI() {
       console.log(e);
       sse.close();
     }
-
-    window.onbeforeunload = function () {
-      console.log("CLOSING connection")
-      sse.close();
-    }
+      function handleLeaveEditor() {
+        submitPresence({id: id, cursor: null});
+        console.log("CLOSING connection");
+        sse.close();
+      }
     quill.setContents(doc.data);
     quill.on('text-change', async function (delta, oldDelta, source) {
       if (source !== "user") return;
@@ -143,8 +143,8 @@ function UI() {
 
     //When an update of another user's presence has been received, 
     //Generate cursor 
-    presence.on('receive', setCursors); 
-
+    //presence.on('receive', setCursors); 
+    
     function setCursors(cursorid,cursor){
       //If the update is from a new user, create a new cursor color
       if(id === cursorid) return
@@ -156,13 +156,13 @@ function UI() {
         let color = "#" +   Math.floor(Math.random()*0xFFFFFF).toString(16);
         console.log(color);
         cursorColors[cursorid] = color
-        cursors.createCursor(cursorid, cursorid ,cursorColors[cursorid]);
+        cursors.createCursor(cursorid, cursor.name ,cursorColors[cursorid]);
       } 
       //Create and move cursor to correct location
       // Replace 2nd id with account name
       cursors.moveCursor(cursorid, cursor);
     }
-
+    return () => handleLeaveEditor();
 }, []);
 
  return (
@@ -176,7 +176,6 @@ function UI() {
 }
 //Send an api request to presence/:id route, change to match apis in milestone 
 function submitPresence(range){
-  if(!range) return;
   console.log(range);
   fetch(`${serverBaseURL}/doc/presence/${docid}/${id}`, {
     method: "POST",
