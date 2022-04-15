@@ -328,15 +328,16 @@ app.post("/users/login", async (req, res) => {
     // console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
     if (user) console.log(user.verified)
-	if (user) {
-		res.cookie('id', req.sessionID);
-        res.cookie('name', user.name);
-        res.json({ name: user.name });
-	} else if (user && user.verified === false) {
+	if (user && user.verified === false) {
         res.json({ error: true, message: 'login user not verified'});
     } else if (user && user.password !== req.body.password) {
         res.json({ error: true, message: 'login incorrect password'});
-    } else {
+    } else if (user) {
+		res.cookie('id', req.sessionID);
+        res.cookie('name', user.name);
+        res.json({ name: user.name });
+	})
+    else {
         console.log('login good luck:' + req.body.email + ' and ' + req.body.password)
 		res.json({ error: true, message: 'login error good luck' });
 	}
