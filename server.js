@@ -249,7 +249,8 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
               connections[uid].write("data: " + content + "\n\n")
             }
             else {
-              let content = JSON.stringify({ content: ops, version: doc.version })
+              //let content = JSON.stringify({ content: ops, version: doc.version })
+              let content = JSON.stringify(ops)
               console.log(`SEND ${content} to ${uid}`)
               connections[uid].write("data: " + content + "\n\n")
             }       
