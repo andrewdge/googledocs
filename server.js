@@ -248,26 +248,27 @@ app.get("/media/access/:mediaid", (req, res) => {
 
 // TODO: edit so takes in DOCID and OPID
 app.post('/doc/op/:docid/:id', async (req, res) => {
-  console.log("send op")
+    // console.log("send op")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let doc = connect.get("documents", req.params.docid)
     let ops = req.body.op // Array of arrays of OTs
     let clientVersion = req.body.version
-    console.log(`client: ${clientVersion}`)
-    console.log(`doc: ${doc.version}`)
+    // console.log(`client: ${clientVersion}`)
+    // console.log(`doc: ${doc.version}`)
     if (clientVersion < doc.version-1) {
-      console.log(clientVersion)
-      console.log(doc.version)
+    //   console.log(clientVersion)
+    //   console.log(doc.version)
       res.json({status: "retry"})
-      console.log("retry")
+    //   console.log("retry")
       res.end()
       return
     }
     doc.submitOp(ops, { source: req.params.id }, function() {
-      res.json({status: "ok"})
-      res.end()
-      
-      return
+        console.log(`${req.params.id} submitted op ${ops}`)
+        res.json({status: "ok"})
+        res.end()
+        
+        return
     })
     
 })
