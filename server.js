@@ -237,7 +237,7 @@ app.get("/media/access/:mediaid", (req, res) => {
 
 // TODO: edit so takes in DOCID and OPID
 app.post('/doc/op/:docid/:id', async (req, res) => {
-  console.log("send op")
+    // console.log("send op")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let doc = connect.get("documents", req.params.docid)
     let ops = req.body.op // Array of arrays of OTs
