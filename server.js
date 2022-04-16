@@ -23,23 +23,20 @@ const { v4 } = require('uuid');
 const MongoShareDB = require('sharedb-mongo');
 const multer = require('multer')
 
-var mediaid = "'"
+var mediaid = ""
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, './images')
   },
   filename: function (req, file, cb) {
-    if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
-      let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
-      mediaid = v4()
-      console.log("downloading image")
-      cb(null, `${mediaid}.${type}`)
-    }
+    let error = (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') ? null : new Error("Incorrect File type")
+    let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
+    mediaid = v4()
+    console.log("downloading image")
+    cb(error, `${mediaid}.${type}`)
   }
 })
-var upload = multer({ storage: storage })
-var connections = {} // maps uid to connection responses
-var docsToConnections = {}
+var upload = multer({ storage: storage }).single('file')
 
 const PORT = 8080;
 const app = express()
@@ -62,16 +59,9 @@ app.use(session({
     saveUninitialized: true
 }));
 
-
-// CORS between the front/backend
-// app.use(cors({
-//     credentials: true,
-//     origin: ['http://localhost:3000', 'http://localhost:8080', '209.151.149.120:3000', '209.151.149.120:8080']
-// })); // need this since we are on 2 ports
-
-// Probably not needed
-// app.set('views', path.join(__dirname, 'views'))
-// app.set('view engine', 'ejs')
+let connections = [] // uid : res
+let docDict = [] // docid: set(uid)
+// after submitop, go thru list of uid for that doc, res.write
 
 
 // Nodemailer with Postfix
@@ -105,16 +95,6 @@ wss.on('connection', (webSocket) => {
 })
 const connect = share.connect();
 
-/*
-Presence subscribed to for each client on a single doc.
-1.X Client enters doc via GET doc/connect/DOCID/UID route. Start connection
-2.X Client asks for doc editor via GET doc/edit/DOCID route
-3.X Client subscribes to the presence of the document
-4.X On change for client-side, send on the OP route their UID and DOCID and delta the given document.
-5. doc/get/DOCID/UID returns html for given document.
-
-
-*/
 
 
 // Set static path from which to send file
@@ -128,7 +108,7 @@ app.get('/', (req, res) => {
 
 // Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
-  console.log("home")
+//   console.log("home")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.session.loggedIn) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
@@ -139,7 +119,7 @@ app.get('/home', (req, res) => {
 
 // Document creation 
 app.post('/collection/create', (req, res) => {
-  console.log("create doc")
+//   console.log("create doc")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let docid = v4();
     let newDoc = connect.get('documents', docid);
@@ -158,7 +138,7 @@ app.post('/collection/create', (req, res) => {
 
 // Document deletion
 app.post('/collection/delete', (req, res) => {
-    console.log('deleting doc')
+    // console.log('deleting doc')
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
     let delDoc = connect.get('documents', req.body.docid);
     delDoc.fetch(function(err){
@@ -178,14 +158,17 @@ app.post('/collection/delete', (req, res) => {
                 res.json({ error: true, message: 'doc deletion error' })
             }
         })
-        console.log(`Deleting document ${req.body.docid}`);
+        // console.log(`Deleting document ${req.body.docid}`);
         res.end();
     });
 })
 
 // Fetch recently used docs
 app.get('/collection/list', async (req, res) => {
+    console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
+    console.log(req.session)
+    console.log(req.session.loggedIn)
     if (req.session.loggedIn) {
         let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
         query.on('ready', async () =>{
@@ -204,25 +187,32 @@ app.get('/collection/list', async (req, res) => {
     } else {
         res.json({ error: true, message: '/collection/list not logged in'})
     }
+    
 })
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
-app.post("/media/upload", upload.single("file"), async (req, res) => {
-  console.log("upload")
+app.post("/media/upload",  async (req, res) => {
+    // console.log("upload")
     console.log(req.headers)
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var id = uuid.v4()
     let file = req.file
-    if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
+    upload(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            // console.log('unsupported filetype')
+            return res.json({ error: true, message: 'unsupported filetype'})
+        } else if (err) {
+            // console.log('dumb image testcase')
+            return res.json({ error: true, message: 'unknown error'})
+        }
+    
+        // console.log('image downloaded')
         res.json({ mediaid: mediaid})
-    } else {
-        console.log('unsupported filetype')
-        res.json({ error: true, message: 'unsupported filetype'})
-    }
+    })
 })
 
 app.get("/media/access/:mediaid", (req, res) => {
-  console.log("access mefdia")
+//   console.log("access media")
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
   if (!req.session.loggedIn) {
@@ -242,29 +232,38 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
     let doc = connect.get("documents", req.params.docid)
     let ops = req.body.op // Array of arrays of OTs
     let clientVersion = req.body.version
+    console.log(`client: ${clientVersion}`)
+    console.log(`doc: ${doc.version}`)
     if (clientVersion < doc.version-1) {
       res.json({status: "retry"})
       res.end()
       return
     }
-    doc.submitOp(ops, { source: req.params.id })
-    docsToConnections[req.params.docid].forEach(function(id) {
-      if (req.params.id == id) { // same user
-        content = JSON.stringify({ack: op, version: doc.version})
-        console.log(`ack with ${doc.version}`)
-        res.write("data: " + content + "\n\n")
-      }
-      else { // other users
-        let content = JSON.stringify({ content: op, version: doc.version })
-        console.log(`sending ${doc.version}`)
-        res.write("data: " + content + "\n\n")
-      }
-    })
+    setTimeout(() => {
+      doc.submitOp(ops, { source: req.params.id }, function() {
+        docDict[req.params.docid].forEach(function(uid) {
+            console.log(`${uid} received op from ${req.params.id} for version ${doc.version}`)
+            if (uid == req.params.id) {
+              let content = JSON.stringify({ack: ops})
+              console.log(`ACK ${content} to ${uid}`)
+              connections[uid].write("data: " + content + "\n\n")
+            }
+            else {
+              let content = JSON.stringify({ content: ops, version: doc.version })
+              console.log(`SEND ${content} to ${uid}`)
+              connections[uid].write("data: " + content + "\n\n")
+            }       
+         })
+      })
+    }, 250)
+    
     res.json({status: "ok"})
+    res.end()
 })
 
+// Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
-  console.log("get html")
+    // console.log("get html")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (!req.session.loggedIn) {
         res.redirect('/')
@@ -279,7 +278,7 @@ app.get('/doc/get/:docid/:id', (req, res) => {
 })
 
 app.get('/doc/edit/:docid', (req, res) => {
-  console.log("start edit")
+    // console.log("start edit")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.session.loggedIn) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
@@ -290,7 +289,7 @@ app.get('/doc/edit/:docid', (req, res) => {
 
 // TODO: Has to also take in userID: /doc/connect/DOCID/UID
 app.get('/doc/connect/:docid/:id', async (req, res) => {
-  console.log("connect")
+    // console.log("connect")
     num = 0
     res.writeHead(200, {
         'X-Accel-Buffering': 'no',
@@ -311,15 +310,16 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     let presence = connect.getDocPresence(doc.collection, doc.id)
     presence.subscribe();
     presence.create(req.params.id);
-    console.log(`first write: ${content}`)
-    res.write("data: " + content  + "\n\n")
     connections[req.params.id] = res
-    if (!docsToConections[req.params.docid]) docsToConnections[req.params.docId] = new Set()
-    docsToConnections[req.params.docid].add(req.params.id)
-   
+    if (docDict[req.params.docid] == undefined) docDict[req.params.docid] = new Set()
+    docDict[req.params.docid].add(req.params.id)
+
+    
+    res.write("data: " + content  + "\n\n")
+
     
     share.use('sendPresence', function(context,next){
-      console.log("send presence")
+        console.log("send presence")
         if (context.presence.d !== req.params.docid) return;
         let presenceObj = {...context.presence.p, name: req.session.name};
         let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
@@ -344,8 +344,8 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
 
 // Login route
 app.post("/users/login", async (req, res) => {
-	res.setHeader("X-CSfE356", "61f9e6a83e92a433bf4fc9fa")
-    console.log('login with email: ' + req.body.email)
+	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
+    // console.log('login with email: ' + req.body.email)
     // console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
 	if (user && user.verified === false) {
@@ -353,7 +353,7 @@ app.post("/users/login", async (req, res) => {
     } else if (user && user.password !== req.body.password) {
         res.json({ error: true, message: 'login incorrect password'});
     } else if (user) {
-        console.log('logged in')
+        // console.log('logged in')
         req.session.loggedIn = true
         req.session.email = req.body.email
         req.session.name = user.name
@@ -389,7 +389,7 @@ app.post("/users/logout", async (req, res) => {
 app.post("/users/signup", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     // console.log(req.body)
-    console.log('signup with email: ' + req.body.email)
+    // console.log('signup with email: ' + req.body.email)
     let user = await User.findOne({ email: req.body.email });
     if (user) {
         return res.json({ error: true, message: 'signup user exist error' });
@@ -429,7 +429,7 @@ app.post("/users/signup", async (req, res) => {
 // Verify route
 app.get("/users/verify", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    console.log('trying verify: ' + req.query.email + ' with vpass: ' + req.query.key)
+    // console.log('trying verify: ' + req.query.email + ' with vpass: ' + req.query.key)
     let user = await User.findOne({ email: req.query.email });
     if ((user && req.query.key === "KEY") || (user && req.query.key === user.vpassword)) {
         await User.updateOne({ email: req.query.email }, { verified: true });
@@ -446,6 +446,16 @@ app.get("/users/verify", async (req, res) => {
 // Server start
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`)
+    // doc.fetch(function (err) {
+    //     if (err) throw err;
+    //     if (doc.type === null) {
+    //         doc.create([], 'rich-text', () => { });
+    //         console.log('doc created')
+    //         // console.log(doc.data)
+    //         return;
+    //     }
+    // })
+    
 })
 
 process.on('SIGINT', function() {
