@@ -22,8 +22,22 @@ const download = require('image-downloader')
 const { v4 } = require('uuid');
 const MongoShareDB = require('sharedb-mongo');
 const multer = require('multer')
-const upload = multer({ dest: './images'})
 
+var mediaid = "'"
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './images')
+  },
+  filename: function (req, file, cb) {
+    if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
+      let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
+      mediaid = v4()
+      console.log("downloading image")
+      cb(null, `${mediaid}.${type}`)
+    }
+  }
+})
+var upload = multer({ storage: storage })
 
 const PORT = 8080;
 const app = express()
@@ -34,22 +48,6 @@ const app = express()
 // app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
 // app.use(bodyParser.json())
 
-// const allowedOrigins = ["http://teos-llamas.cse356.compas.cs.stonybrook.edu/", "http://localhost:8080", "209.151.153.183"];
-// const corsOptions = {
-//     origin: function (origin, callback) {
-//         if (allowedOrigins.indexOf(origin) !== -1) {
-//             callback(null, true);
-//         } else {
-//             var msg =
-//             "The CORS policy for this site " + origin + " does not " +
-//             "allow access from the specified Origin.";
-//             callback(new Error(msg), false);
-//         }
-//     },
-//     optionsSuccessStatus: 200,
-//     credentials: true,
-// };
-// app.use(cors(corsOptions));
 app.use(cors({ credentials: true }))
 // app.use(express.json())
 app.use(express.urlencoded({ extended: true}));
@@ -128,6 +126,7 @@ app.get('/', (req, res) => {
 
 // Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
+  console.log("home")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.session.loggedIn) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
@@ -138,6 +137,7 @@ app.get('/home', (req, res) => {
 
 // Document creation 
 app.post('/collection/create', (req, res) => {
+  console.log("create doc")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let docid = v4();
     let newDoc = connect.get('documents', docid);
@@ -210,17 +210,22 @@ app.get('/collection/list', async (req, res) => {
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
 app.post("/media/upload", upload.single("file"), async (req, res) => {
+  console.log("upload")
+    console.log(req.headers)
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var id = uuid.v4()
-    console.log(req.file)
     let file = req.file
     if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
         let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
-        console.log('mimetype: ' + type)
+        // console.log('mimetype: ' + type)
+        // console.log(`url: ${file}`)
+        // console.log(file)
+        // console.log(`filename: ${file.filename}`)
+        // console.log(`filename: ${type}`)
         let options = {url: file, dest: path.join(__dirname, "images", `${file.filename}.${type}`)}
         download.image(options).then(({ filename }) => { console.log('saved to ', filename)}).catch((err) => console.log(err))
         console.log('image downloaded')
-        res.json({ mediaid: id})
+        res.json({ mediaid: mediaid})
     } else {
         console.log('unsupported filetype')
         res.json({ error: true, message: 'unsupported filetype'})
@@ -228,11 +233,13 @@ app.post("/media/upload", upload.single("file"), async (req, res) => {
 })
 
 app.get("/media/access/:mediaid", (req, res) => {
+  console.log("access media")
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
   if (!req.session.loggedIn) {
       console.log('not logged in image access')
-      res.redirect('/')
+      res.json({error: true, message: "Not logged in"})
+      // res.redirect('/')
   } else {
     console.log('getting image: ' + id)
     res.sendFile(`./images/${id}.jpg`, {root: __dirname})
@@ -241,6 +248,7 @@ app.get("/media/access/:mediaid", (req, res) => {
 
 // TODO: edit so takes in DOCID and OPID
 app.post('/doc/op/:docid/:id', async (req, res) => {
+  console.log("send op")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let doc = connect.get("documents", req.params.docid)
     let ops = req.body.op // Array of arrays of OTs
@@ -266,6 +274,7 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
 
 // Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
+  console.log("get html")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (!req.session.loggedIn) {
         res.redirect('/')
@@ -280,6 +289,7 @@ app.get('/doc/get/:docid/:id', (req, res) => {
 })
 
 app.get('/doc/edit/:docid', (req, res) => {
+  console.log("start edit")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.session.loggedIn) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
@@ -290,7 +300,7 @@ app.get('/doc/edit/:docid', (req, res) => {
 
 // TODO: Has to also take in userID: /doc/connect/DOCID/UID
 app.get('/doc/connect/:docid/:id', async (req, res) => {
-    console.log("connectaffffffffffffffffffffasdfsaaADFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+  console.log("connect")
     num = 0
     res.writeHead(200, {
         'X-Accel-Buffering': 'no',
@@ -330,13 +340,9 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
           }
         })
     });
-    // doc.on("before op", (op, src) => {
-    //     if (src == req.params.id) {
-            
-    //     }
-    // })
     
     share.use('sendPresence', function(context,next){
+      console.log("send presence")
         if (context.presence.d !== req.params.docid) return;
         let presenceObj = {...context.presence.p, name: req.session.name};
         let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
@@ -347,6 +353,7 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
 
 // Presence id API
 app.post("/doc/presence/:docid/:id", async (req, res) => {
+    console.log("presents")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     //Use the corresponding local presence to submit the provided location of cursor
     let doc = connect.get("documents", req.params.docid)
@@ -393,6 +400,9 @@ app.post("/users/logout", async (req, res) => {
         // res.cookie("name", "", { path: '/', expires: new Date() })
         res.clearCookie("id")
         res.clearCookie("name")
+        req.session.loggedIn = false
+        req.session.email = undefined
+        req.session.name = undefined
         // res.json({ status: "OK" })
         res.json({})
 	}
