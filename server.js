@@ -33,6 +33,7 @@ var storage = multer.diskStorage({
     let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
     mediaid = v4()
     console.log("downloading image")
+    imgDict[mediaid] = type
     cb(error, `${mediaid}.${type}`)
   }
 })
@@ -60,7 +61,8 @@ app.use(session({
 }));
 
 let connections = [] // uid : res
-let docDict = [] // docid: set(uid)
+let docDict = {} // docid: set(uid)
+let imgDict = {}
 // after submitop, go thru list of uid for that doc, res.write
 
 
@@ -221,7 +223,7 @@ app.get("/media/access/:mediaid", (req, res) => {
       // res.redirect('/')
   } else {
     console.log('getting image: ' + id)
-    res.sendFile(`./images/${id}.jpg`, {root: __dirname})
+    res.sendFile(`./images/${id}.${imgDict[id]}`, {root: __dirname})
   }
 })
 
@@ -230,33 +232,43 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
     // console.log("send op")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let doc = connect.get("documents", req.params.docid)
+    doc.preventCompose = true;
     let ops = req.body.op // Array of arrays of OTs
     let clientVersion = req.body.version
-    console.log(`client: ${clientVersion}`)
-    console.log(`doc: ${doc.version}`)
-    if (clientVersion < doc.version-1) {
-      res.json({status: "retry"})
-      res.end()
+    console.log(`client: ${clientVersion} doc: ${docDict[req.params.docid].version}`)
+    if (clientVersion < docDict[req.params.docid].version) {
+        // doc.whenNothingPending( () => {
+            res.json({status: "retry"})
+            console.log("retry")
+            res.end()
+        // });
       return
     }
-    setTimeout(() => {
+    // setTimeout(() => {
       doc.submitOp(ops, { source: req.params.id }, function() {
-        docDict[req.params.docid].forEach(function(uid) {
-            console.log(`${uid} received op from ${req.params.id} for version ${doc.version}`)
-            if (uid == req.params.id) {
-              let content = JSON.stringify({ack: ops})
-              console.log(`ACK ${content} to ${uid}`)
-              connections[uid].write("data: " + content + "\n\n")
-            }
-            else {
-              let content = JSON.stringify({ content: ops, version: doc.version })
-              console.log(`SEND ${content} to ${uid}`)
-              connections[uid].write("data: " + content + "\n\n")
-            }       
-         })
+        
+        
       })
-    }, 250)
-    
+    // }, 250)
+    docDict[req.params.docid].version++;
+
+    docDict[req.params.docid].users.forEach(function(uid) {
+      // console.log(`${uid} received op from ${req.params.id} for version ${doc.version}`)
+      doc.whenNothingPending( () => {    
+          if (uid == req.params.id) {
+                  let content = JSON.stringify({ack: ops})
+                  // console.log(`ACK ${content} to ${uid}`)
+                  connections[uid].write("data: " + content + "\n\n")
+          }
+          else {
+              //let content = JSON.stringify({ content: ops, version: doc.version })
+              let content = JSON.stringify(ops)
+              // console.log(`SEND ${content} to ${uid}`)
+              connections[uid].write("data: " + content + "\n\n")
+          }
+      });
+   })
+   
     res.json({status: "ok"})
     res.end()
 })
@@ -311,8 +323,8 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     presence.subscribe();
     presence.create(req.params.id);
     connections[req.params.id] = res
-    if (docDict[req.params.docid] == undefined) docDict[req.params.docid] = new Set()
-    docDict[req.params.docid].add(req.params.id)
+    if (docDict[req.params.docid] == undefined) docDict[req.params.docid] = {version: doc.version, users: new Set()}
+    docDict[req.params.docid].users.add(req.params.id)
 
     
     res.write("data: " + content  + "\n\n")
@@ -321,8 +333,9 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     share.use('sendPresence', function(context,next){
         console.log("send presence")
         if (context.presence.d !== req.params.docid) return;
-        let presenceObj = {...context.presence.p, name: req.session.name};
-        let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
+        let content = JSON.stringify({presence: {id: context.presence.id, cursor: context.presence.p }});
+        console.log(`Broadcasting presence: ${req.params.id} ` )
+        console.log(content)
         res.write("data: " + content + "\n\n" );
         next()
     }) 
@@ -337,7 +350,7 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
     let presence = connect.getDocPresence(doc.collection, doc.id)
     let cursor = {...req.body, name: req.session.name};
     presence.localPresences[req.params.id].submit(cursor);
-    res.end();
+    res.json({});
 
 
 })
