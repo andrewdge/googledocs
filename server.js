@@ -125,7 +125,7 @@ app.get('/', (req, res) => {
 
 // Displays 10 most recently used documents.
 app.get('/home', (req, res) => {
-  console.log("home")
+//   console.log("home")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.session.loggedIn) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
@@ -136,7 +136,7 @@ app.get('/home', (req, res) => {
 
 // Document creation 
 app.post('/collection/create', (req, res) => {
-  console.log("create doc")
+//   console.log("create doc")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     let docid = v4();
     let newDoc = connect.get('documents', docid);
@@ -155,7 +155,7 @@ app.post('/collection/create', (req, res) => {
 
 // Document deletion
 app.post('/collection/delete', (req, res) => {
-    console.log('deleting doc')
+    // console.log('deleting doc')
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
     let delDoc = connect.get('documents', req.body.docid);
     delDoc.fetch(function(err){
@@ -175,7 +175,7 @@ app.post('/collection/delete', (req, res) => {
                 res.json({ error: true, message: 'doc deletion error' })
             }
         })
-        console.log(`Deleting document ${req.body.docid}`);
+        // console.log(`Deleting document ${req.body.docid}`);
         res.end();
     });
 })
@@ -209,21 +209,21 @@ app.get('/collection/list', async (req, res) => {
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
 app.post("/media/upload",  async (req, res) => {
-    console.log("upload")
+    // console.log("upload")
     console.log(req.headers)
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var id = uuid.v4()
     let file = req.file
     upload(req, res, function (err) {
         if (err instanceof multer.MulterError) {
-            console.log('unsupported filetype')
+            // console.log('unsupported filetype')
             return res.json({ error: true, message: 'unsupported filetype'})
         } else if (err) {
-            console.log('unknown error while uploading')
+            // console.log('dumb image testcase')
             return res.json({ error: true, message: 'unknown error'})
         }
     
-        console.log('image downloaded')
+        // console.log('image downloaded')
         res.json({ mediaid: mediaid})
     })
     // if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
@@ -236,7 +236,7 @@ app.post("/media/upload",  async (req, res) => {
 })
 
 app.get("/media/access/:mediaid", (req, res) => {
-  console.log("access media")
+//   console.log("access media")
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
   if (!req.session.loggedIn) {
@@ -278,7 +278,7 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
 
 // Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
-  console.log("get html")
+    // console.log("get html")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (!req.session.loggedIn) {
         res.redirect('/')
@@ -293,7 +293,7 @@ app.get('/doc/get/:docid/:id', (req, res) => {
 })
 
 app.get('/doc/edit/:docid', (req, res) => {
-  console.log("start edit")
+    // console.log("start edit")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (req.session.loggedIn) {
         res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
@@ -304,7 +304,7 @@ app.get('/doc/edit/:docid', (req, res) => {
 
 // TODO: Has to also take in userID: /doc/connect/DOCID/UID
 app.get('/doc/connect/:docid/:id', async (req, res) => {
-  console.log("connect")
+    // console.log("connect")
     num = 0
     res.writeHead(200, {
         'X-Accel-Buffering': 'no',
@@ -325,29 +325,27 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     let presence = connect.getDocPresence(doc.collection, doc.id)
     presence.subscribe();
     presence.create(req.params.id);
-    console.log(`first write: ${content}`)
+    // console.log(`first write: ${content}`)
     res.write("data: " + content  + "\n\n")
     doc.on('op', (op, src) => {
         console.log(`${req.params.id} received op from ${src} for version ${doc.version}`)
-        if (src == req.params.id) {
-            content = JSON.stringify({ack: op})
-            console.log(`ack with ${doc.version}`)
-            res.write("data: " + content + "\n\n")
-        } else {
-            doc.whenNothingPending(function() {
+        doc.whenNothingPending(function() {
+            if (src === req.params.id) {
+                let content = JSON.stringify({ack: op})
+                console.log(`ack with ${doc.version}`)
+                res.write("data: " + content + "\n\n")
+            } else {
                 let content = JSON.stringify({ content: op, version: doc.version })
                 // console.log(`subsequent write: ${content}`)
-                console.log(`sending ${doc.version}`)
+                // console.log(`sending ${doc.version}`)
                 // console.log(doc.version)
                 res.write("data: " + content + "\n\n")
-            })
-            
-        }
-        
+            }
+        })
     });
     
     share.use('sendPresence', function(context,next){
-      console.log("send presence")
+        console.log("send presence")
         if (context.presence.d !== req.params.docid) return;
         let presenceObj = {...context.presence.p, name: req.session.name};
         let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
@@ -373,7 +371,7 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
 // Login route
 app.post("/users/login", async (req, res) => {
 	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    console.log('login with email: ' + req.body.email)
+    // console.log('login with email: ' + req.body.email)
     // console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
 	if (user && user.verified === false) {
@@ -381,7 +379,7 @@ app.post("/users/login", async (req, res) => {
     } else if (user && user.password !== req.body.password) {
         res.json({ error: true, message: 'login incorrect password'});
     } else if (user) {
-        console.log('logged in')
+        // console.log('logged in')
         req.session.loggedIn = true
         req.session.email = req.body.email
         req.session.name = user.name
@@ -417,7 +415,7 @@ app.post("/users/logout", async (req, res) => {
 app.post("/users/signup", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     // console.log(req.body)
-    console.log('signup with email: ' + req.body.email)
+    // console.log('signup with email: ' + req.body.email)
     let user = await User.findOne({ email: req.body.email });
     if (user) {
         return res.json({ error: true, message: 'signup user exist error' });
@@ -457,7 +455,7 @@ app.post("/users/signup", async (req, res) => {
 // Verify route
 app.get("/users/verify", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    console.log('trying verify: ' + req.query.email + ' with vpass: ' + req.query.key)
+    // console.log('trying verify: ' + req.query.email + ' with vpass: ' + req.query.key)
     let user = await User.findOne({ email: req.query.email });
     if ((user && req.query.key === "KEY") || (user && req.query.key === user.vpassword)) {
         await User.updateOne({ email: req.query.email }, { verified: true });
