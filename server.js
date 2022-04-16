@@ -62,10 +62,7 @@ app.use(session({
 
 let connections = [] // uid : res
 let docDict = {} // docid: set(uid)
-<<<<<<< HEAD
 let imgDict = {}
-=======
->>>>>>> 469a7e13fbb4baa0a2c0db1e8d098f8dff9204a5
 // after submitop, go thru list of uid for that doc, res.write
 
 
