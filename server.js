@@ -38,6 +38,8 @@ var storage = multer.diskStorage({
   }
 })
 var upload = multer({ storage: storage })
+var connections = {} // maps uid to connection responses
+var docsToConnections = {}
 
 const PORT = 8080;
 const app = express()
@@ -183,10 +185,7 @@ app.post('/collection/delete', (req, res) => {
 
 // Fetch recently used docs
 app.get('/collection/list', async (req, res) => {
-    console.log('Fetching top 10 most recent docs');
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    console.log(req.session)
-    console.log(req.session.loggedIn)
     if (req.session.loggedIn) {
         let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
         query.on('ready', async () =>{
@@ -205,7 +204,6 @@ app.get('/collection/list', async (req, res) => {
     } else {
         res.json({ error: true, message: '/collection/list not logged in'})
     }
-    
 })
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
@@ -216,15 +214,6 @@ app.post("/media/upload", upload.single("file"), async (req, res) => {
     var id = uuid.v4()
     let file = req.file
     if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
-        let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
-        // console.log('mimetype: ' + type)
-        // console.log(`url: ${file}`)
-        // console.log(file)
-        // console.log(`filename: ${file.filename}`)
-        // console.log(`filename: ${type}`)
-        let options = {url: file, dest: path.join(__dirname, "images", `${file.filename}.${type}`)}
-        download.image(options).then(({ filename }) => { console.log('saved to ', filename)}).catch((err) => console.log(err))
-        console.log('image downloaded')
         res.json({ mediaid: mediaid})
     } else {
         console.log('unsupported filetype')
@@ -233,7 +222,7 @@ app.post("/media/upload", upload.single("file"), async (req, res) => {
 })
 
 app.get("/media/access/:mediaid", (req, res) => {
-  console.log("access media")
+  console.log("access mefdia")
   let id = req.params.mediaid
   res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
   if (!req.session.loggedIn) {
@@ -253,26 +242,27 @@ app.post('/doc/op/:docid/:id', async (req, res) => {
     let doc = connect.get("documents", req.params.docid)
     let ops = req.body.op // Array of arrays of OTs
     let clientVersion = req.body.version
-    console.log(`client: ${clientVersion}`)
-    console.log(`doc: ${doc.version}`)
     if (clientVersion < doc.version-1) {
-      console.log(clientVersion)
-      console.log(doc.version)
       res.json({status: "retry"})
-      console.log("retry")
       res.end()
       return
     }
-    doc.submitOp(ops, { source: req.params.id }, function() {
-      res.json({status: "ok"})
-      res.end()
-      
-      return
+    doc.submitOp(ops, { source: req.params.id })
+    docsToConnections[req.params.docid].forEach(function(id) {
+      if (req.params.id == id) { // same user
+        content = JSON.stringify({ack: op, version: doc.version})
+        console.log(`ack with ${doc.version}`)
+        res.write("data: " + content + "\n\n")
+      }
+      else { // other users
+        let content = JSON.stringify({ content: op, version: doc.version })
+        console.log(`sending ${doc.version}`)
+        res.write("data: " + content + "\n\n")
+      }
     })
-    
+    res.json({status: "ok"})
 })
 
-// Not required?
 app.get('/doc/get/:docid/:id', (req, res) => {
   console.log("get html")
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
@@ -323,23 +313,10 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     presence.create(req.params.id);
     console.log(`first write: ${content}`)
     res.write("data: " + content  + "\n\n")
-    doc.on('op', (op, src) => {
-        console.log(`${req.params.id} received op from ${src} for version ${doc.version}`)
-        doc.whenNothingPending(function() {
-          if (src == req.params.id) {
-            content = JSON.stringify({ack: op, version: doc.version})
-            console.log(`ack with ${doc.version}`)
-            res.write("data: " + content + "\n\n")
-          }
-          else {
-            let content = JSON.stringify({ content: op, version: doc.version })
-            // console.log(`subsequent write: ${content}`)
-            console.log(`sending ${doc.version}`)
-            // console.log(doc.version)
-            res.write("data: " + content + "\n\n")
-          }
-        })
-    });
+    connections[req.params.id] = res
+    if (!docsToConections[req.params.docid]) docsToConnections[req.params.docId] = new Set()
+    docsToConnections[req.params.docid].add(req.params.id)
+   
     
     share.use('sendPresence', function(context,next){
       console.log("send presence")
@@ -367,7 +344,7 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
 
 // Login route
 app.post("/users/login", async (req, res) => {
-	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
+	res.setHeader("X-CSfE356", "61f9e6a83e92a433bf4fc9fa")
     console.log('login with email: ' + req.body.email)
     // console.log(req.body)
 	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
@@ -469,16 +446,6 @@ app.get("/users/verify", async (req, res) => {
 // Server start
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`)
-    // doc.fetch(function (err) {
-    //     if (err) throw err;
-    //     if (doc.type === null) {
-    //         doc.create([], 'rich-text', () => { });
-    //         console.log('doc created')
-    //         // console.log(doc.data)
-    //         return;
-    //     }
-    // })
-    
 })
 
 process.on('SIGINT', function() {
