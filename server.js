@@ -23,21 +23,20 @@ const { v4 } = require('uuid');
 const MongoShareDB = require('sharedb-mongo');
 const multer = require('multer')
 
-var mediaid = "'"
+var mediaid = ""
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, './images')
   },
   filename: function (req, file, cb) {
-    if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
-      let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
-      mediaid = v4()
-      console.log("downloading image")
-      cb(null, `${mediaid}.${type}`)
-    }
+    let error = (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') ? null : new Error("Incorrect File type")
+    let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
+    mediaid = v4()
+    console.log("downloading image")
+    cb(error, `${mediaid}.${type}`)
   }
 })
-var upload = multer({ storage: storage })
+var upload = multer({ storage: storage }).single('file')
 
 const PORT = 8080;
 const app = express()
@@ -209,27 +208,31 @@ app.get('/collection/list', async (req, res) => {
 })
 
 // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
-app.post("/media/upload", upload.single("file"), async (req, res) => {
-  console.log("upload")
+app.post("/media/upload",  async (req, res) => {
+    console.log("upload")
     console.log(req.headers)
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     var id = uuid.v4()
     let file = req.file
-    if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
-        let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
-        // console.log('mimetype: ' + type)
-        // console.log(`url: ${file}`)
-        // console.log(file)
-        // console.log(`filename: ${file.filename}`)
-        // console.log(`filename: ${type}`)
-        let options = {url: file, dest: path.join(__dirname, "images", `${file.filename}.${type}`)}
-        download.image(options).then(({ filename }) => { console.log('saved to ', filename)}).catch((err) => console.log(err))
+    upload(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            console.log('unsupported filetype')
+            return res.json({ error: true, message: 'unsupported filetype'})
+        } else if (err) {
+            console.log('unknown error while uploading')
+            return res.json({ error: true, message: 'unknown error'})
+        }
+    
         console.log('image downloaded')
         res.json({ mediaid: mediaid})
-    } else {
-        console.log('unsupported filetype')
-        res.json({ error: true, message: 'unsupported filetype'})
-    }
+    })
+    // if (file.mimetype === 'image/jpeg' || file.mimetype == 'image/png') {
+    //     console.log('image downloaded')
+    //     res.json({ mediaid: mediaid})
+    // } else {
+    //     console.log('unsupported filetype')
+    //     res.json({ error: true, message: 'unsupported filetype'})
+    // }
 })
 
 app.get("/media/access/:mediaid", (req, res) => {
@@ -327,10 +330,10 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     doc.on('op', (op, src) => {
         console.log(`${req.params.id} received op from ${src} for version ${doc.version}`)
         if (src == req.params.id) {
-            content = JSON.stringify({ack: op, version: doc.version})
+            content = JSON.stringify({ack: op})
             console.log(`ack with ${doc.version}`)
             res.write("data: " + content + "\n\n")
-          } else {
+        } else {
             doc.whenNothingPending(function() {
                 let content = JSON.stringify({ content: op, version: doc.version })
                 // console.log(`subsequent write: ${content}`)
