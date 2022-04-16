@@ -322,8 +322,9 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     share.use('sendPresence', function(context,next){
         console.log("send presence")
         if (context.presence.d !== req.params.docid) return;
-        let presenceObj = {...context.presence.p, name: req.session.name};
-        let content = JSON.stringify({presence: {id: context.presence.id, cursor: presenceObj }});
+        let content = JSON.stringify({presence: {id: context.presence.id, cursor: context.presence.p }});
+        console.log(`Broadcasting presence: ${req.params.id} ` )
+        console.log(content)
         res.write("data: " + content + "\n\n" );
         next()
     }) 
@@ -338,7 +339,7 @@ app.post("/doc/presence/:docid/:id", async (req, res) => {
     let presence = connect.getDocPresence(doc.collection, doc.id)
     let cursor = {...req.body, name: req.session.name};
     presence.localPresences[req.params.id].submit(cursor);
-    res.end();
+    res.json({});
 
 
 })
