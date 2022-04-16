@@ -325,20 +325,21 @@ app.get('/doc/connect/:docid/:id', async (req, res) => {
     res.write("data: " + content  + "\n\n")
     doc.on('op', (op, src) => {
         console.log(`${req.params.id} received op from ${src} for version ${doc.version}`)
-        doc.whenNothingPending(function() {
-          if (src == req.params.id) {
+        if (src == req.params.id) {
             content = JSON.stringify({ack: op, version: doc.version})
             console.log(`ack with ${doc.version}`)
             res.write("data: " + content + "\n\n")
-          }
-          else {
-            let content = JSON.stringify({ content: op, version: doc.version })
-            // console.log(`subsequent write: ${content}`)
-            console.log(`sending ${doc.version}`)
-            // console.log(doc.version)
-            res.write("data: " + content + "\n\n")
-          }
-        })
+          } else {
+            doc.whenNothingPending(function() {
+                let content = JSON.stringify({ content: op, version: doc.version })
+                // console.log(`subsequent write: ${content}`)
+                console.log(`sending ${doc.version}`)
+                // console.log(doc.version)
+                res.write("data: " + content + "\n\n")
+            })
+            
+        }
+        
     });
     
     share.use('sendPresence', function(context,next){
