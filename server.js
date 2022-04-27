@@ -90,7 +90,7 @@ const docDB = MongoShareDB('mongodb+srv://andrew:andrewge@cluster0.f9prs.mongodb
 const share = new ShareDB({db: docDB, presence: true, doNotForwardSendPresenceErrorsToClient: true });
 
 // ShareDB connection
-const wss = new WebSocket.Server({ port: 8090 }); //Webserver for clients to connect to sharedb
+const wss = new WebSocket.Server({ port: process.env.SOCK || 9999 }); //Webserver for clients to connect to sharedb
 // const ws = new WebSocket("ws://localhost:8090") //websocket for sharedb connection
 wss.on('connection', (webSocket) => {
     share.listen(new WebSocketJSONStream(webSocket));
@@ -117,6 +117,16 @@ app.get('/home', (req, res) => {
     } else {
         res.redirect('/')
     }
+})
+
+app.get('/index/search', (req, res) => {
+    console.log('search')
+    res.json({})
+})
+
+app.get('/index/suggest', (req, res) => {
+    console.log('suggest')
+    res.json({})
 })
 
 // Document creation 
@@ -402,7 +412,7 @@ app.post("/users/logout", async (req, res) => {
 app.post("/users/signup", async (req, res) => {
     res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
     // console.log(req.body)
-    // console.log('signup with email: ' + req.body.email)
+    console.log('signup with email: ' + req.body.email)
     let user = await User.findOne({ email: req.body.email });
     if (user) {
         return res.json({ error: true, message: 'signup user exist error' });
@@ -457,7 +467,7 @@ app.get("/users/verify", async (req, res) => {
 })
 
 // Server start
-app.listen(PORT, () => {
+app.listen(process.env.PORT || PORT, () => {
     console.log(`Server started on port ${PORT}`)
     // doc.fetch(function (err) {
     //     if (err) throw err;
