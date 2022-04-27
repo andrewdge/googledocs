@@ -22,6 +22,7 @@ const download = require('image-downloader')
 const { v4 } = require('uuid');
 const MongoShareDB = require('sharedb-mongo');
 const multer = require('multer')
+const { Client } = require('@elastic/elasticsearch')
 
 var mediaid = ""
 var storage = multer.diskStorage({
@@ -29,8 +30,14 @@ var storage = multer.diskStorage({
     cb(null, './images')
   },
   filename: function (req, file, cb) {
-    let error = (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') ? null : new Error("Incorrect File type")
-    let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
+    let error = (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/gif') ? null : new Error("Incorrect File type")
+    if (file.mimetype === 'image/jpeg') {
+        type = 'jpg';
+    } else if (file.mimetype === 'image/png') {
+        type = 'png';
+    } else {
+        type = 'gif';
+    }
     mediaid = v4()
     // console.log("downloading image")
     imgDict[mediaid] = type
@@ -96,6 +103,41 @@ wss.on('connection', (webSocket) => {
     share.listen(new WebSocketJSONStream(webSocket));
 })
 const connect = share.connect();
+
+const esClient = new Client({
+    cloud: { 
+        id: 'Milestone3:dXMtZWFzdC0xLmF3cy5mb3VuZC5pbyQ2NTFjOWI1YjQxMWI0ZDAzYTkyZmQ4YjJhNGU3ZDBiOCQ3Yzk5MmEzY2RmYTA0NGMxOTI0NzU1OTYxYTVmMmZjMQ=='
+    },
+    auth: { 
+        apiKey: 'NndWSWJZQUJHeDVJaC00XzliWFI6ZjNDUFM4N2tRRS1FR1htSHI3RHFVQQ==' 
+    }
+})
+
+esClient.info()
+  .then(response => console.log(response))
+  .catch(error => console.error(error))
+
+const func = async () => {
+
+    const res = esClient.index({
+        index: 'test',
+        body: {
+            "a": "b",
+        }
+    })
+    console.log(res)
+
+    const result = await esClient.search({
+        index: 'test',
+        query: {
+          match_all: {}
+        }
+      })
+    console.log(result)
+}
+
+func()
+
 
 
 

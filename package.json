@@ -6,6 +6,7 @@
     "start": "nodemon server.js"
   },
   "dependencies": {
+    "@elastic/elasticsearch": "^8.1.0",
     "@teamwork/websocket-json-stream": "^2.0.0",
     "body-parser": "^1.19.2",
     "concurrently": "^7.1.0",
