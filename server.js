@@ -32,7 +32,7 @@ var storage = multer.diskStorage({
     let error = (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') ? null : new Error("Incorrect File type")
     let type = file.mimetype === 'image/jpeg' ? 'jpg' : 'png';
     mediaid = v4()
-    console.log("downloading image")
+    // console.log("downloading image")
     imgDict[mediaid] = type
     cb(error, `${mediaid}.${type}`)
   }
@@ -51,7 +51,7 @@ const app = express()
 app.use(cors({ credentials: true }))
 // app.use(express.json())
 app.use(express.urlencoded({ extended: true, limit: '10mb'}));
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
 app.use(cookieParser())
 // Set up cookies
 app.use(session({
@@ -383,7 +383,7 @@ app.post("/users/login", async (req, res) => {
         req.session.save()
         res.json({ name: user.name })
 	} else {
-        console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
+        // console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
 		res.json({ error: true, message: 'login error prob no user found' });
 	}
 })
