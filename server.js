@@ -39,442 +39,478 @@ var storage = multer.diskStorage({
 })
 var upload = multer({ storage: storage }).single('file')
 
-const PORT = 8080;
-const app = express()
-// const server = http.createServer(app)
-// const wss = new WebSocket.Server({ server: server })
+const numServers = 2;
+let basePort = 3000;
+let servers = [];
+let ports = [];
 
-// For image/file limit
-// app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }))
-// app.use(bodyParser.json())
+let wssPort = 8090;
+let sockets = []
 
-app.use(cors({ credentials: true }))
-// app.use(express.json())
-app.use(express.urlencoded({ extended: true}));
-app.use(express.json())
-app.use(cookieParser())
-// Set up cookies
-app.use(session({
-    secret: 'keyboard cat',
-    resave: true,
-    saveUninitialized: true
-}));
+for (let i = 0; i < numServers; i++) {
+    ports[i] = basePort + i;
+    sockets[i] = wssPort + i
+}
 
-let connections = [] // uid : res
-let docDict = {} // docid: set(uid)
-let imgDict = {}
-// after submitop, go thru list of uid for that doc, res.write
+// const PORT = 8080;
+// const app = express()
+// const app2 = express()
 
-
-// Nodemailer with Postfix
-let transporter = nodemailer.createTransport({
-    service: 'postfix',
-    host: 'localhost',
-    port: 25,
-    auth: { user: 'root@googledocs-m2', pass: '' },
-    tls: { rejectUnauthorized: false },
-    name: 'root@googledocs-m2'
-  });
-
-// Mongoose setup
-mongoose.Promise = global.Promise;
-(async () => await connection())();
-
-// ShareDB + Mongo set up
-const db = mongoose.connection
-ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
-
-const docDB = MongoShareDB('mongodb+srv://andrew:andrewge@cluster0.f9prs.mongodb.net/main?retryWrites=true&w=majority');
-// const share = new ShareDB({db});
-//Set sharedb presence to true, and do not forward presence error to clients
-const share = new ShareDB({db: docDB, presence: true, doNotForwardSendPresenceErrorsToClient: true });
-
-// ShareDB connection
-const wss = new WebSocket.Server({ port: 8090 }); //Webserver for clients to connect to sharedb
-// const ws = new WebSocket("ws://localhost:8090") //websocket for sharedb connection
-wss.on('connection', (webSocket) => {
-    share.listen(new WebSocketJSONStream(webSocket));
-})
-const connect = share.connect();
+for (let i = 0; i < numServers; i++) {
+    console.log(`server ${i} created`)
+    servers[i] = express();
 
 
 
-// Set static path from which to send file
-app.use(express.static(path.join(__dirname, '/gdocs/build')))
+// const handler = num => (req,res)=>{
+//     const { method, url, headers, body } = req;
+//     console.log(`server ${num} responded`)
+//     // res.send('Response from server ' + num);
+// }
+  
+// Only handle GET and POST requests
+// Receive request and pass to handler method
+// app.get('*', handler(1)).post('*', handler(1));
+// app2.get('*', handler(2)).post('*', handler(2));
 
-// Base route - To login/register, redirects to home if logged in. All other paths require auth
-app.get('/', (req, res) => {
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
-})
 
-// Displays 10 most recently used documents.
-app.get('/home', (req, res) => {
-//   console.log("home")
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.session.loggedIn) {
-        res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
-    } else {
-        res.redirect('/')
-    }
-})
+    servers[i].use(cors({ credentials: true }))
+    // app.use(express.json())
+    servers[i].use(express.urlencoded({ extended: true}));
+    servers[i].use(express.json())
+    servers[i].use(cookieParser())
+    // Set up cookies
+    servers[i].use(session({
+        secret: 'keyboard cat',
+        resave: true,
+        saveUninitialized: true
+    }));
 
-// Document creation 
-app.post('/collection/create', (req, res) => {
-//   console.log("create doc")
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    let docid = v4();
-    let newDoc = connect.get('documents', docid);
-    newDoc.fetch(async function(err){
-        if(err || newDoc.type !== null) return res.json({ error: true, message: "doc creation error" });
-        newDoc.create([], 'rich-text', () => { });
-        console.log(req.body.name)
-        let nameDoc = new Doc({
-            id: docid,
-            name: req.body.name
-        });
-        await nameDoc.save();
-        res.json({docid: newDoc.id});
+    let connections = [] // uid : res
+    let docDict = {} // docid: set(uid)
+    let imgDict = {}
+    // after submitop, go thru list of uid for that doc, res.write
+
+
+    // Nodemailer with Postfix
+    let transporter = nodemailer.createTransport({
+        service: 'postfix',
+        host: 'localhost',
+        port: 25,
+        auth: { user: 'root@googledocs-m2', pass: '' },
+        tls: { rejectUnauthorized: false },
+        name: 'root@googledocs-m2'
     });
-})
 
-// Document deletion
-app.post('/collection/delete', (req, res) => {
-    // console.log('deleting doc')
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    let delDoc = connect.get('documents', req.body.docid);
-    delDoc.fetch(function(err){
-        if(err) {
-            console.log(err);
-            return res.json({ error: true, message: 'doc deletion fetch error' });
+    // Mongoose setup
+    mongoose.Promise = global.Promise;
+    (async () => await connection())();
+
+    // ShareDB + Mongo set up
+    const db = mongoose.connection
+    ShareDB.types.register(require('rich-text').type); // type registration, rich text is like bold, italic, etc
+
+    const docDB = MongoShareDB('mongodb+srv://andrew:andrewge@cluster0.f9prs.mongodb.net/main?retryWrites=true&w=majority');
+    // const share = new ShareDB({db});
+    //Set sharedb presence to true, and do not forward presence error to clients
+    const share = new ShareDB({db: docDB, presence: true, doNotForwardSendPresenceErrorsToClient: true });
+
+    // ShareDB connection
+    const wss = new WebSocket.Server({ port: sockets[i] }); //Webserver for clients to connect to sharedb
+    // const ws = new WebSocket("ws://localhost:8090") //websocket for sharedb connection
+    wss.on('connection', (webSocket) => {
+        share.listen(new WebSocketJSONStream(webSocket));
+    })
+    const connect = share.connect();
+
+
+
+    // Set static path from which to send file
+    servers[i].use(express.static(path.join(__dirname, '/gdocs/build')))
+
+    // const handler = num => (req,res)=>{
+    //     // const { method, url, headers, body } = req;
+    //     console.log(`/test server ${i} responded`)
+    //     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    //     res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+    //     // res.send('Response from server ' + num);
+    // }
+
+    // Base route - To login/register, redirects to home if logged in. All other paths require auth
+    servers[i].get('/', num => (req, res) => {
+        console.log(`/ server ${num} responded`)
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+    })
+
+    // servers[i].get('/test', handler(i));
+
+    
+
+    // Displays 10 most recently used documents.
+    servers[i].get('/home', (req, res) => {
+    //   console.log("home")
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        if (req.session.loggedIn) {
+            res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+        } else {
+            res.redirect('/')
         }
-        if(delDoc.type === null) return res.json({ error: true, message: 'doc deletion null error' });
-        delDoc.destroy(function(err){
+    })
+
+    // Document creation 
+    servers[i].post('/collection/create', (req, res) => {
+    //   console.log("create doc")
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        let docid = v4();
+        let newDoc = connect.get('documents', docid);
+        newDoc.fetch(async function(err){
+            if(err || newDoc.type !== null) return res.json({ error: true, message: "doc creation error" });
+            newDoc.create([], 'rich-text', () => { });
+            console.log(req.body.name)
+            let nameDoc = new Doc({
+                id: docid,
+                name: req.body.name
+            });
+            await nameDoc.save();
+            res.json({docid: newDoc.id});
+        });
+    })
+
+    // Document deletion
+    servers[i].post('/collection/delete', (req, res) => {
+        // console.log('deleting doc')
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
+        let delDoc = connect.get('documents', req.body.docid);
+        delDoc.fetch(function(err){
             if(err) {
                 console.log(err);
-                res.json({ error: true, message: 'doc deletion destroy error' })
+                return res.json({ error: true, message: 'doc deletion fetch error' });
             }
-        })
-        delDoc.del(function(err){
-            if (err) {
-                res.json({ error: true, message: 'doc deletion error' })
-            }
-        })
-        // console.log(`Deleting document ${req.body.docid}`);
-        res.end();
-    });
-})
-
-// Fetch recently used docs
-app.get('/collection/list', async (req, res) => {
-    console.log('Fetching top 10 most recent docs');
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
-    console.log(req.session)
-    console.log(req.session.loggedIn)
-    if (req.session.loggedIn) {
-        let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
-        query.on('ready', async () =>{
-            let documents = await Promise.all(query.results.map( async (element,index) => {
-            try {
-                let doc = await Doc.findOne({id: element.id})
-                return {id: element.id, name: doc.name}
-            }
-            catch(err) {
-                throw err
-            }
-            }))
-
-            return res.json(documents);
-        })
-    } else {
-        res.json({ error: true, message: '/collection/list not logged in'})
-    }
-    
-})
-
-// Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
-app.post("/media/upload",  async (req, res) => {
-    // console.log("upload")
-    console.log(req.headers)
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    var id = uuid.v4()
-    let file = req.file
-    upload(req, res, function (err) {
-        if (err instanceof multer.MulterError) {
-            // console.log('unsupported filetype')
-            return res.json({ error: true, message: 'unsupported filetype'})
-        } else if (err) {
-            // console.log('dumb image testcase')
-            return res.json({ error: true, message: 'unknown error'})
-        }
-    
-        // console.log('image downloaded')
-        res.json({ mediaid: mediaid})
+            if(delDoc.type === null) return res.json({ error: true, message: 'doc deletion null error' });
+            delDoc.destroy(function(err){
+                if(err) {
+                    console.log(err);
+                    res.json({ error: true, message: 'doc deletion destroy error' })
+                }
+            })
+            delDoc.del(function(err){
+                if (err) {
+                    res.json({ error: true, message: 'doc deletion error' })
+                }
+            })
+            // console.log(`Deleting document ${req.body.docid}`);
+            res.end();
+        });
     })
-})
 
-app.get("/media/access/:mediaid", (req, res) => {
-//   console.log("access media")
-  let id = req.params.mediaid
-  res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-  if (!req.session.loggedIn) {
-      console.log('not logged in image access')
-      res.json({error: true, message: "Not logged in"})
-      // res.redirect('/')
-  } else {
-    console.log('getting image: ' + id)
-    res.sendFile(`./images/${id}.${imgDict[id]}`, {root: __dirname})
-  }
-})
+    // Fetch recently used docs
+    servers[i].get('/collection/list', async (req, res) => {
+        console.log('Fetching top 10 most recent docs');
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa');
+        console.log(req.session)
+        console.log(req.session.loggedIn)
+        if (req.session.loggedIn) {
+            let query = connect.createFetchQuery('documents', {$sort: {"_m.mtime": -1}, $limit: 10});
+            query.on('ready', async () =>{
+                let documents = await Promise.all(query.results.map( async (element,index) => {
+                try {
+                    let doc = await Doc.findOne({id: element.id})
+                    return {id: element.id, name: doc.name}
+                }
+                catch(err) {
+                    throw err
+                }
+                }))
 
-// TODO: edit so takes in DOCID and OPID
-app.post('/doc/op/:docid/:id', async (req, res) => {
-    // console.log("send op")
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    let doc = connect.get("documents", req.params.docid)
-    doc.preventCompose = true;
-    let ops = req.body.op // Array of arrays of OTs
-    let clientVersion = req.body.version
-    console.log(`client: ${clientVersion} doc: ${docDict[req.params.docid].version}`)
-    if (clientVersion < docDict[req.params.docid].version) {
-        // doc.whenNothingPending( () => {
-            res.json({status: "retry"})
-            console.log("retry")
-            res.end()
-        // });
-      return
-    }
-    // setTimeout(() => {
-      doc.submitOp(ops, { source: req.params.id }, function() {
+                return res.json(documents);
+            })
+        } else {
+            res.json({ error: true, message: '/collection/list not logged in'})
+        }
         
+    })
+
+    // Upload media (MIME type may need to be adjusted; also may try Quill-image-uploader)
+    servers[i].post("/media/upload",  async (req, res) => {
+        // console.log("upload")
+        console.log(req.headers)
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        var id = uuid.v4()
+        let file = req.file
+        upload(req, res, function (err) {
+            if (err instanceof multer.MulterError) {
+                // console.log('unsupported filetype')
+                return res.json({ error: true, message: 'unsupported filetype'})
+            } else if (err) {
+                // console.log('dumb image testcase')
+                return res.json({ error: true, message: 'unknown error'})
+            }
         
-      })
-    // }, 250)
-    docDict[req.params.docid].version++;
+            // console.log('image downloaded')
+            res.json({ mediaid: mediaid})
+        })
+    })
 
-    docDict[req.params.docid].users.forEach(function(uid) {
-      // console.log(`${uid} received op from ${req.params.id} for version ${doc.version}`)
-      doc.whenNothingPending( () => {    
-          if (uid == req.params.id) {
-                  let content = JSON.stringify({ack: ops})
-                  // console.log(`ACK ${content} to ${uid}`)
-                  connections[uid].write("data: " + content + "\n\n")
-          }
-          else {
-              //let content = JSON.stringify({ content: ops, version: doc.version })
-              let content = JSON.stringify(ops)
-              // console.log(`SEND ${content} to ${uid}`)
-              connections[uid].write("data: " + content + "\n\n")
-          }
-      });
-   })
-   
-    res.json({status: "ok"})
-    res.end()
-})
-
-// Not required?
-app.get('/doc/get/:docid/:id', (req, res) => {
-    // console.log("get html")
+    servers[i].get("/media/access/:mediaid", (req, res) => {
+    //   console.log("access media")
+    let id = req.params.mediaid
     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
     if (!req.session.loggedIn) {
-        res.redirect('/')
+        console.log('not logged in image access')
+        res.json({error: true, message: "Not logged in"})
+        // res.redirect('/')
     } else {
-        var doc = connect.get('documents', req.params.docid);
-        var cfg = {}
-        var converter = new DeltaConverter(doc.data.ops, cfg)
-        var html = converter.convert()
-        res.send(html)
-        res.end()
+        console.log('getting image: ' + id)
+        res.sendFile(`./images/${id}.${imgDict[id]}`, {root: __dirname})
     }
-})
+    })
 
-app.get('/doc/edit/:docid', (req, res) => {
-    // console.log("start edit")
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    if (req.session.loggedIn) {
-        res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
-    } else {
-        res.redirect('/')
-    }
-})
-
-// TODO: Has to also take in userID: /doc/connect/DOCID/UID
-app.get('/doc/connect/:docid/:id', async (req, res) => {
-    // console.log("connect")
-    num = 0
-    res.writeHead(200, {
-        'X-Accel-Buffering': 'no',
-        // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
-    }) // set up http stream
-    res.flushHeaders(); // send headers
-    let doc = connect.get("documents", req.params.docid)// get ops
-    let oplist = ""
-    if (doc.data) {
-        oplist = doc.data.ops
-    }
-    let content = JSON.stringify({ content: oplist, version: doc.version })
-    //let content = JSON.stringify({content: oplist})
-    let presence = connect.getDocPresence(doc.collection, doc.id)
-    presence.subscribe();
-    presence.create(req.params.id);
-    connections[req.params.id] = res
-    if (docDict[req.params.docid] == undefined) docDict[req.params.docid] = {version: doc.version, users: new Set()}
-    docDict[req.params.docid].users.add(req.params.id)
-
-    
-    res.write("data: " + content  + "\n\n")
-
-    
-    share.use('sendPresence', function(context,next){
-        console.log("send presence")
-        if (context.presence.d !== req.params.docid) return;
-        let content = JSON.stringify({presence: {id: context.presence.id, cursor: context.presence.p }});
-        console.log(`Broadcasting presence: ${req.params.id} ` )
-        console.log(content)
-        res.write("data: " + content + "\n\n" );
-        next()
-    }) 
-});
-
-// Presence id API
-app.post("/doc/presence/:docid/:id", async (req, res) => {
-    console.log("presents")
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    //Use the corresponding local presence to submit the provided location of cursor
-    let doc = connect.get("documents", req.params.docid)
-    let presence = connect.getDocPresence(doc.collection, doc.id)
-    let cursor = {...req.body, name: req.session.name};
-    presence.localPresences[req.params.id].submit(cursor);
-    res.json({});
-
-
-})
-
-// Login route
-app.post("/users/login", async (req, res) => {
-	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    // console.log('login with email: ' + req.body.email)
-    // console.log(req.body)
-	let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
-	if (user && user.verified === false) {
-        res.json({ error: true, message: 'login user not verified'});
-    } else if (user && user.password !== req.body.password) {
-        res.json({ error: true, message: 'login incorrect password'});
-    } else if (user) {
-        // console.log('logged in')
-        req.session.loggedIn = true
-        req.session.email = req.body.email
-        req.session.name = user.name
-        req.session.save()
-        res.json({ name: user.name })
-	} else {
-        console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
-		res.json({ error: true, message: 'login error prob no user found' });
-	}
-})
-
-// Logout route
-app.post("/users/logout", async (req, res) => {
-	res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-	if (!req.session.loggedIn) {
-		res.json({ error: true, message: 'logout not logged in' });
-	}
-	else {
-        console.log('logging out user: ' + req.headers.cookie.id)
-		// res.cookie("id", "", { path: '/', expires: new Date() })
-        // res.cookie("name", "", { path: '/', expires: new Date() })
-        res.clearCookie("id")
-        res.clearCookie("name")
-        req.session.loggedIn = false
-        req.session.email = undefined
-        req.session.name = undefined
-        // res.json({ status: "OK" })
-        res.json({})
-	}
-})
-
-// Signup route. TODO: Mail fix
-app.post("/users/signup", async (req, res) => {
-    res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    // console.log(req.body)
-    // console.log('signup with email: ' + req.body.email)
-    let user = await User.findOne({ email: req.body.email });
-    if (user) {
-        return res.json({ error: true, message: 'signup user exist error' });
-    } else {
-        // Insert the new user if they do not exist yet
-        let key = v4();
-        user = new User({
-            name: req.body.name,
-            email: req.body.email,
-            password: req.body.password,
-            verified: false,
-            vpassword: key
-        });
-        
-        await user.save();
-        let mailOptions = {
-            from: 'root@googledocs-m2',
-            to: req.body.email,
-            subject: 'Verification Password',
-            text: `http://teos-llamas.cse356.compas.cs.stonybrook.edu/users/verify?email=${encodeURIComponent(req.body.email)}&key=${key}`
+    // TODO: edit so takes in DOCID and OPID
+    servers[i].post('/doc/op/:docid/:id', async (req, res) => {
+        // console.log("send op")
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        let doc = connect.get("documents", req.params.docid)
+        doc.preventCompose = true;
+        let ops = req.body.op // Array of arrays of OTs
+        let clientVersion = req.body.version
+        console.log(`client: ${clientVersion} doc: ${docDict[req.params.docid].version}`)
+        if (clientVersion < docDict[req.params.docid].version) {
+            // doc.whenNothingPending( () => {
+                res.json({status: "retry"})
+                console.log("retry")
+                res.end()
+            // });
+        return
         }
-        let info = await transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error)
-                // TODO: RECOMMENT ONCE BACK ON SERVER, THIS BREAKS CLIENT
-                res.json({ error: true, message: 'mail send error' })
+        // setTimeout(() => {
+        doc.submitOp(ops, { source: req.params.id }, function() {
+            
+            
+        })
+        // }, 250)
+        docDict[req.params.docid].version++;
+
+        docDict[req.params.docid].users.forEach(function(uid) {
+        // console.log(`${uid} received op from ${req.params.id} for version ${doc.version}`)
+        doc.whenNothingPending( () => {    
+            if (uid == req.params.id) {
+                    let content = JSON.stringify({ack: ops})
+                    // console.log(`ACK ${content} to ${uid}`)
+                    connections[uid].write("data: " + content + "\n\n")
             }
             else {
-                console.log(info)
+                //let content = JSON.stringify({ content: ops, version: doc.version })
+                let content = JSON.stringify(ops)
+                // console.log(`SEND ${content} to ${uid}`)
+                connections[uid].write("data: " + content + "\n\n")
             }
         });
-        // res.json({ status: "OK" });
-        res.json({})
-    }
-})
-
-// Verify route
-app.get("/users/verify", async (req, res) => {
-    res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
-    // console.log('trying verify: ' + req.query.email + ' with vpass: ' + req.query.key)
-    let user = await User.findOne({ email: req.query.email });
-    if ((user && req.query.key === "KEY") || (user && req.query.key === user.vpassword)) {
-        await User.updateOne({ email: req.query.email }, { verified: true });
-        user = await User.findOne({ email: req.query.email });
-        console.log('verified ' + req.query.email)
-        res.redirect('/')
-        // res.json({ status: "OK" })
-    } else {
-        console.log('verify fail ' + req.query.email)
-        res.json({ error: true, message: 'verify error' });
-    }
-})
-
-// Server start
-app.listen(PORT, () => {
-    console.log(`Server started on port ${PORT}`)
-    // doc.fetch(function (err) {
-    //     if (err) throw err;
-    //     if (doc.type === null) {
-    //         doc.create([], 'rich-text', () => { });
-    //         console.log('doc created')
-    //         // console.log(doc.data)
-    //         return;
-    //     }
-    // })
+    })
     
-})
+        res.json({status: "ok"})
+        res.end()
+    })
 
-process.on('SIGINT', function() {
-    console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
-    // some other closing procedures go here
-    wss.close();
-    process.exit(0);
-  });
+    // Not required?
+    servers[i].get('/doc/get/:docid/:id', (req, res) => {
+        // console.log("get html")
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        if (!req.session.loggedIn) {
+            res.redirect('/')
+        } else {
+            var doc = connect.get('documents', req.params.docid);
+            var cfg = {}
+            var converter = new DeltaConverter(doc.data.ops, cfg)
+            var html = converter.convert()
+            res.send(html)
+            res.end()
+        }
+    })
+
+    servers[i].get('/doc/edit/:docid', (req, res) => {
+        // console.log("start edit")
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        if (req.session.loggedIn) {
+            res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+        } else {
+            res.redirect('/')
+        }
+    })
+
+    // TODO: Has to also take in userID: /doc/connect/DOCID/UID
+    servers[i].get('/doc/connect/:docid/:id', async (req, res) => {
+        // console.log("connect")
+        num = 0
+        res.writeHead(200, {
+            'X-Accel-Buffering': 'no',
+            // 'Location': process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '209.151.149.120:3000',
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-CSE356': '61f9e6a83e92a433bf4fc9fa'
+        }) // set up http stream
+        res.flushHeaders(); // send headers
+        let doc = connect.get("documents", req.params.docid)// get ops
+        let oplist = ""
+        if (doc.data) {
+            oplist = doc.data.ops
+        }
+        let content = JSON.stringify({ content: oplist, version: doc.version })
+        //let content = JSON.stringify({content: oplist})
+        let presence = connect.getDocPresence(doc.collection, doc.id)
+        presence.subscribe();
+        presence.create(req.params.id);
+        connections[req.params.id] = res
+        if (docDict[req.params.docid] == undefined) docDict[req.params.docid] = {version: doc.version, users: new Set()}
+        docDict[req.params.docid].users.add(req.params.id)
+
+        
+        res.write("data: " + content  + "\n\n")
+
+        
+        share.use('sendPresence', function(context,next){
+            console.log("send presence")
+            if (context.presence.d !== req.params.docid) return;
+            let content = JSON.stringify({presence: {id: context.presence.id, cursor: context.presence.p }});
+            console.log(`Broadcasting presence: ${req.params.id} ` )
+            console.log(content)
+            res.write("data: " + content + "\n\n" );
+            next()
+        }) 
+    });
+
+    // Presence id API
+    servers[i].post("/doc/presence/:docid/:id", async (req, res) => {
+        console.log("presents")
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        //Use the corresponding local presence to submit the provided location of cursor
+        let doc = connect.get("documents", req.params.docid)
+        let presence = connect.getDocPresence(doc.collection, doc.id)
+        let cursor = {...req.body, name: req.session.name};
+        presence.localPresences[req.params.id].submit(cursor);
+        res.json({});
+
+
+    })
+
+    // Login route
+    servers[i].post("/users/login", async (req, res) => {
+        res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
+        // console.log('login with email: ' + req.body.email)
+        // console.log(req.body)
+        let user = await User.findOne({ email: req.body.email, password: req.body.password, verified: true });
+        if (user && user.verified === false) {
+            res.json({ error: true, message: 'login user not verified'});
+        } else if (user && user.password !== req.body.password) {
+            res.json({ error: true, message: 'login incorrect password'});
+        } else if (user) {
+            // console.log('logged in')
+            req.session.loggedIn = true
+            req.session.email = req.body.email
+            req.session.name = user.name
+            req.session.save()
+            res.json({ name: user.name })
+        } else {
+            console.log('login no user found probably:' + req.body.email + ' and ' + req.body.password)
+            res.json({ error: true, message: 'login error prob no user found' });
+        }
+    })
+
+    // Logout route
+    servers[i].post("/users/logout", async (req, res) => {
+        res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
+        if (!req.session.loggedIn) {
+            res.json({ error: true, message: 'logout not logged in' });
+        }
+        else {
+            console.log('logging out user: ' + req.headers.cookie.id)
+            // res.cookie("id", "", { path: '/', expires: new Date() })
+            // res.cookie("name", "", { path: '/', expires: new Date() })
+            res.clearCookie("id")
+            res.clearCookie("name")
+            req.session.loggedIn = false
+            req.session.email = undefined
+            req.session.name = undefined
+            // res.json({ status: "OK" })
+            res.json({})
+        }
+    })
+
+    // Signup route. TODO: Mail fix
+    servers[i].post("/users/signup", async (req, res) => {
+        res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
+        // console.log(req.body)
+        // console.log('signup with email: ' + req.body.email)
+        let user = await User.findOne({ email: req.body.email });
+        if (user) {
+            return res.json({ error: true, message: 'signup user exist error' });
+        } else {
+            // Insert the new user if they do not exist yet
+            let key = v4();
+            user = new User({
+                name: req.body.name,
+                email: req.body.email,
+                password: req.body.password,
+                verified: false,
+                vpassword: key
+            });
+            
+            await user.save();
+            let mailOptions = {
+                from: 'root@googledocs-m2',
+                to: req.body.email,
+                subject: 'Verification Password',
+                text: `http://teos-llamas.cse356.compas.cs.stonybrook.edu/users/verify?email=${encodeURIComponent(req.body.email)}&key=${key}`
+            }
+            let info = await transporter.sendMail(mailOptions, function (error, info) {
+                if (error) {
+                    console.log(error)
+                    // TODO: RECOMMENT ONCE BACK ON SERVER, THIS BREAKS CLIENT
+                    res.json({ error: true, message: 'mail send error' })
+                }
+                else {
+                    console.log(info)
+                }
+            });
+            // res.json({ status: "OK" });
+            res.json({})
+        }
+    })
+
+    // Verify route
+    servers[i].get("/users/verify", async (req, res) => {
+        res.setHeader("X-CSE356", "61f9e6a83e92a433bf4fc9fa")
+        // console.log('trying verify: ' + req.query.email + ' with vpass: ' + req.query.key)
+        let user = await User.findOne({ email: req.query.email });
+        if ((user && req.query.key === "KEY") || (user && req.query.key === user.vpassword)) {
+            await User.updateOne({ email: req.query.email }, { verified: true });
+            user = await User.findOne({ email: req.query.email });
+            console.log('verified ' + req.query.email)
+            res.redirect('/')
+            // res.json({ status: "OK" })
+        } else {
+            console.log('verify fail ' + req.query.email)
+            res.json({ error: true, message: 'verify error' });
+        }
+    })
+
+    // Server start
+    // app.listen(PORT, () => {
+    //     console.log(`Server started on port ${PORT}`)
+        
+    // })
+    servers[i].listen(ports[i], err =>{
+        err ?
+        console.log(`Failed to listen on PORT ${ports[i]}`):
+        console.log(`Application Server listening on PORT ${ports[i]}`);
+    });
+
+    process.on('SIGINT', function() {
+        console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
+        // some other closing procedures go here
+        wss.close();
+        process.exit(0);
+    });
+}
 
