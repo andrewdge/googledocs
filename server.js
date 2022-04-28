@@ -118,56 +118,99 @@ esClient.info()
   .catch(error => console.error(error))
 
 const func = async () => {
-
-    const res = esClient.index({
-        settings: {
-            analysis: {
-                analyzer: {
-                    my_stop_analyzer: { 
-                        type: "custom",
-                        tokenizer: "standard",
-                        filter: [
-                            "lowercase",
-                            "english_stop",
-                            "porter_stem"
-                        ]
+    //esClient.indices.delete({index: 'test_suggest1'})
+    esClient.indices.exists({index: 'test_suggest1'}).then(async function (exists) {
+        if(!exists){
+            console.log("I NEED HELP")
+            const res = esClient.indices.create({
+                index: "test_suggest1",
+                settings: {
+                    analysis: {
+                        analyzer: {
+                            my_stop_analyzer: { 
+                                type: "custom",
+                                tokenizer: "standard",
+                                filter: [
+                                    "lowercase",
+                                    "english_stop",
+                                    "porter_stem"
+                                ]
+                            }
+                        },
+                        filter: {
+                            english_stop:{
+                                type: "stop",
+                                stopwords: "_english_"
+                            }
+                        }
                     }
                 },
-                filter: {
-                    english_stop:{
-                        type: "stop",
-                        stopwords: "_english_"
-                    }
+                body: {
+                    mappings: {
+                        properties: {
+                            title: {
+                                type: "text",
+                                analyzer: "my_stop_analyzer", 
+                                search_analyzer: "my_stop_analyzer", 
+                                search_quote_analyzer: "my_stop_analyzer" 
+                            },
+                            content: {
+                                type: "text",
+                                fielddata: true,
+                                analyzer: "my_stop_analyzer", 
+                                search_analyzer: "my_stop_analyzer", 
+                                search_quote_analyzer: "my_stop_analyzer"
+                            }
+                        }
+                    },
                 }
-            }
-        },
-        mappings: {
-            properties: {
-                title: {
-                    type: "text",
-                    analyzer: "my_stop_analyzer", 
-                    search_analyzer: "my_stop_analyzer", 
-                    search_quote_analyzer: "my_stop_analyzer" 
-                }
-            }
-        },
-        index: 'test',
-        body: {
-            "a": "b",
+            })
+            console.log(res)
         }
-    })
-    console.log(res)
+        const test_doc = await esClient.index({
+            index: 'test_suggest1',
+            body: {
+                title: "b",
+                content: "Pain pain pain no"
+            }
+        }) 
 
-    const result = await esClient.search({
-        index: 'test',
-        query: {
-          match_all: {}
-        }
-      })
-    console.log(result)
+        /*
+        esClient.indices.exists({index: 'test_suggest3'}).then(async function (exists) {
+            if(!exists)
+                esClient.indices.create({index: 'test_suggest3'})
+        })
+        esClient.indices.putMapping({
+            index: 'test_suggest3',
+            body: {
+                properties: {
+                    title: {type: "text"},
+                    content: {type: "text", fielddata: true}
+                }
+            }
+        })
+    
+        const res = esClient.index({
+            index: 'test_suggest3',
+            body: {
+                title: "b",
+                content: "Pain pain pain no"
+            }
+        })
+        console.log(res)
+
+        const result = await esClient.search({
+            index: 'test_suggest3',
+            query: {
+                match_all: {}
+            }
+        })
+        console.log(result)
+        */
+    })
 }
 
-// func()
+//func()
 
 
 
@@ -240,6 +283,13 @@ app.get('/index/search', async (req, res) => {
                             analyzer: "my_stop_analyzer", 
                             search_analyzer: "my_stop_analyzer", 
                             search_quote_analyzer: "my_stop_analyzer" 
+                        },
+                        content: {
+                            type: "text",
+                            fielddata: true,
+                            analyzer: "my_stop_analyzer", 
+                            search_analyzer: "my_stop_analyzer", 
+                            search_quote_analyzer: "my_stop_analyzer"
                         }
                     }
                 },
@@ -251,7 +301,81 @@ app.get('/index/search', async (req, res) => {
 
 app.get('/index/suggest', async (req, res) => {
     console.log('suggest')
-    res.json({})
+    let queryWord = req.query.q;
+    if(queryWord.length < 4){
+        res.json([]);
+        return; 
+    } 
+
+    esClient.indices.exists({index: 'test'}).then(async function (exists) {
+        if(exists){
+            const agg = await esClient.search({
+                index: 'test',
+                query: {
+                    match_phrase_prefix: {
+                        content: queryWord
+                    }
+                }, 
+                size: 0,
+                aggs:{
+                    wordAggs : {
+                        terms: {
+                            field: "content",
+                            include: `${queryWord}+*`
+                        }
+                    }
+                } 
+        
+            })
+            console.log(agg.aggregations.wordAggs.buckets)
+            let suggestions = agg.aggregations.wordAggs.buckets.map(item => item.key);
+        
+            res.json(suggestions)
+        } else {
+            const r = await esClient.indices.create({
+                index: 'test',
+                settings: {
+                    analysis: {
+                        analyzer: {
+                            my_stop_analyzer: { 
+                                type: "custom",
+                                tokenizer: "standard",
+                                filter: [
+                                    "lowercase",
+                                    "english_stop",
+                                    "porter_stem"
+                                ]
+                            }
+                        },
+                        filter: {
+                            english_stop:{
+                                type: "stop",
+                                stopwords: "_english_"
+                            }
+                        }
+                    }
+                },
+                mappings: {
+                    properties: {
+                        title: {
+                            type: "text",
+                            analyzer: "my_stop_analyzer", 
+                            search_analyzer: "my_stop_analyzer", 
+                            search_quote_analyzer: "my_stop_analyzer" 
+                        },
+                        content: {
+                            type: "text",
+                            fielddata: true,
+                            analyzer: "my_stop_analyzer", 
+                            search_analyzer: "my_stop_analyzer", 
+                            search_quote_analyzer: "my_stop_analyzer"
+                        }
+                    }
+                },
+            })
+            res.json([])
+        }
+    })
 })
 
 // Document creation 
