@@ -321,7 +321,7 @@ app.get('/index/suggest', async (req, res) => {
                     wordAggs : {
                         terms: {
                             field: "content",
-                            include: `${queryWord}+*`
+                            include: `${queryWord}.+`
                         }
                     }
                 } 
