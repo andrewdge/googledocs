@@ -114,12 +114,43 @@ const esClient = new Client({
 })
 
 esClient.info()
-  .then(response => console.log(response))
+  .then(response => console.log("connected to elasticsearch"))
   .catch(error => console.error(error))
 
 const func = async () => {
 
     const res = esClient.index({
+        settings: {
+            analysis: {
+                analyzer: {
+                    my_stop_analyzer: { 
+                        type: "custom",
+                        tokenizer: "standard",
+                        filter: [
+                            "lowercase",
+                            "english_stop",
+                            "porter_stem"
+                        ]
+                    }
+                },
+                filter: {
+                    english_stop:{
+                        type: "stop",
+                        stopwords: "_english_"
+                    }
+                }
+            }
+        },
+        mappings: {
+            properties: {
+                title: {
+                    type: "text",
+                    analyzer: "my_stop_analyzer", 
+                    search_analyzer: "my_stop_analyzer", 
+                    search_quote_analyzer: "my_stop_analyzer" 
+                }
+            }
+        },
         index: 'test',
         body: {
             "a": "b",
@@ -136,7 +167,7 @@ const func = async () => {
     console.log(result)
 }
 
-func()
+// func()
 
 
 
@@ -161,12 +192,64 @@ app.get('/home', (req, res) => {
     }
 })
 
-app.get('/index/search', (req, res) => {
-    console.log('search')
-    res.json({})
+app.get('/index/search', async (req, res) => {
+    esClient.indices.exists({index: 'test'}).then(async function (exists) {
+        let query = req.query.q
+        if (exists) {
+            console.log("akfjaksdfjkds")
+            console.log(exists)
+            const resp = await esClient.search({
+                index: 'test',
+                query: {
+                    match: {
+                        content: query
+                    }
+                }   
+            })
+            // TODO: MAKE SURE RETURN TOP 10 RESULTS IN DECREASING ORDER
+            console.log(resp.hits.hits)
+        }
+        else {
+            const r = await esClient.indices.create({
+                index: 'test',
+                settings: {
+                    analysis: {
+                        analyzer: {
+                            my_stop_analyzer: { 
+                                type: "custom",
+                                tokenizer: "standard",
+                                filter: [
+                                    "lowercase",
+                                    "english_stop",
+                                    "porter_stem"
+                                ]
+                            }
+                        },
+                        filter: {
+                            english_stop:{
+                                type: "stop",
+                                stopwords: "_english_"
+                            }
+                        }
+                    }
+                },
+                mappings: {
+                    properties: {
+                        title: {
+                            type: "text",
+                            analyzer: "my_stop_analyzer", 
+                            search_analyzer: "my_stop_analyzer", 
+                            search_quote_analyzer: "my_stop_analyzer" 
+                        }
+                    }
+                },
+            })
+        }
+        res.json({})
+    })
 })
 
-app.get('/index/suggest', (req, res) => {
+app.get('/index/suggest', async (req, res) => {
     console.log('suggest')
     res.json({})
 })
