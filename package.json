@@ -8,6 +8,7 @@
   "dependencies": {
     "@elastic/elasticsearch": "^8.1.0",
     "@teamwork/websocket-json-stream": "^2.0.0",
+    "axios": "^0.27.2",
     "body-parser": "^1.19.2",
     "concurrently": "^7.1.0",
     "cookie-parser": "^1.4.6",
@@ -16,6 +17,7 @@
     "ejs": "^3.1.6",
     "express": "^4.17.3",
     "express-session": "^1.17.2",
+    "http-proxy": "^1.18.1",
     "image-downloader": "^4.2.0",
     "joi": "^17.6.0",
     "json5": "^2.2.1",
