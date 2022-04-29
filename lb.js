@@ -30,8 +30,8 @@ app.use(session({
 // Application servers
 let servers = [
     "http://localhost:8080",
-    "http://localhost:8081",
-    "http://localhost:8082"
+    // "http://localhost:8081",
+    // "http://localhost:8082"
 ]
 
 let transporter = nodemailer.createTransport({
@@ -62,14 +62,17 @@ const hash = (id) => {
 }
 
 app.get('/', (req, res) => {
-    let s = Math.floor(Math.random() * servers.length);
-    console.log(s)
-    proxy.web(req, res, { target: servers[s] });
+    // let s = Math.floor(Math.random() * servers.length);
+    // console.log(s)
+    // proxy.web(req, res, { target: servers[s] });
+    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+    res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
 })
 
 app.get('/home', (req, res) => {
     if (req.session.loggedIn) {
-        proxy.web(req, res, { target: servers[Math.floor(Math.random() * servers.length)] });
+        res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+        res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
     } else {
         res.redirect('/')
     }
@@ -92,6 +95,7 @@ app.post('/collection/delete', (req, res) => {
 })
 
 app.get('/collection/list', async (req, res) => {
+    console.log(req.session.loggedIn)
     if (req.session.loggedIn) {
         proxy.web(req, res, { target: servers[Math.floor(Math.random() * servers.length)] });
     } else {
