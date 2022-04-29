@@ -209,16 +209,16 @@ app.get('/', (req, res) => {
 })
 
 // Displays 10 most recently used documents.
-app.get('/home', (req, res) => {
-//   console.log("home")
-    res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
-    res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
-    // if (req.session.loggedIn) {
-    //     res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
-    // } else {
-    //     res.redirect('/')
-    // }
-})
+// app.get('/home', (req, res) => {
+// //   console.log("home")
+//     res.setHeader('X-CSE356', '61f9e6a83e92a433bf4fc9fa')
+//     res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+//     // if (req.session.loggedIn) {
+//     //     res.sendFile(path.join(__dirname, "gdocs/build/index.html"))
+//     // } else {
+//     //     res.redirect('/')
+//     // }
+// })
 
 app.get('/index/search', async (req, res) => {
   let query = req.query.q
