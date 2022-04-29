@@ -55,8 +55,12 @@ store.on('error', function(error) {
 
 app.use(session({
     secret: 'keyboard cat',
-    resave: true,
-    proxy: true,
+    resave: false,
+    // proxy: true,
+    cookie: {
+        secure: false,
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+    },
     saveUninitialized: true,
     store: store,
 }));
