@@ -14,6 +14,7 @@ const { User, validate } = require('./models/user')
 const mongoose = require('mongoose')
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const nodemailer = require('nodemailer')
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 app.use(cors({ credentials: true }))
 // app.use(express.json())
@@ -21,16 +22,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb'}));
 app.use(express.json({ limit: '10mb' }))
 app.use(cookieParser())
 // Set up cookies
-app.use(session({
-    secret: 'keyboard cat',
-    resave: true,
-    saveUninitialized: true
-}));
+
   
 // Application servers
 let servers = [
     "http://localhost:8080",
-    // "http://localhost:8081",
+    "http://localhost:8081",
     // "http://localhost:8082"
 ]
 
@@ -48,7 +45,21 @@ mongoose.Promise = global.Promise;
 
 const db = mongoose.connection
 
+let store = new MongoDBStore({
+    uri: "mongodb+srv://andrew:andrewge@cluster0.f9prs.mongodb.net/main?retryWrites=true&w=majority",
+    collection: 'mySessions'
+});
+store.on('error', function(error) {
+    console.log(error);
+});
 
+app.use(session({
+    secret: 'keyboard cat',
+    resave: true,
+    proxy: true,
+    saveUninitialized: true,
+    store: store,
+}));
 
 let proxy = httpProxy.createProxyServer({});
 
@@ -60,6 +71,11 @@ const hash = (id) => {
     console.log(server)
     return server;
 }
+
+app.use((req, res, next) => {
+    console.log(req.session);
+    next()
+})
 
 app.get('/', (req, res) => {
     // let s = Math.floor(Math.random() * servers.length);
@@ -87,7 +103,10 @@ app.get('/index/suggest', async (req, res) => {
 })
 
 app.post('/collection/create', (req, res) => {
-    proxy.web(req, res, { target: servers[Math.floor(Math.random() * servers.length)] });
+    console.log('rec')
+    let s = Math.floor(Math.random() * servers.length)
+    console.log(s)
+    proxy.web(req, res, { target: servers[s] });
 })
 
 app.post('/collection/delete', (req, res) => {
@@ -95,7 +114,7 @@ app.post('/collection/delete', (req, res) => {
 })
 
 app.get('/collection/list', async (req, res) => {
-    console.log(req.session.loggedIn)
+    // console.log(req.session.loggedIn)
     if (req.session.loggedIn) {
         proxy.web(req, res, { target: servers[Math.floor(Math.random() * servers.length)] });
     } else {
@@ -260,7 +279,6 @@ app.get("/users/verify", async (req, res) => {
 // });
 
 
-
 proxy.on('error', function (err, req, res) {
     res.writeHead(500, {
       'Content-Type': 'text/plain'
@@ -271,11 +289,9 @@ proxy.on('error', function (err, req, res) {
     res.end('Something went wrong. And we are reporting a custom error message.');
 });
 
-  
-// Listen on PORT 8080
-app.listen(8000, err =>{
+PORT=8000
+app.listen(PORT, err =>{
     err ?
-    console.log("Failed to listen on PORT 8080"):
-    console.log("Load Balancer Server "
-          + "listening on PORT 8080");
+    console.log(`Failed to listen on PORT ${PORT}`):
+    console.log("Load Balancer Server " + `listening on PORT ${PORT}`);
 });
